@@ -1,0 +1,120 @@
+
+aside {
+    width: 30%;
+    padding-left: 15px;
+    margin-left: 15px;
+    float: left;
+    
+}
+ul>li>a{
+    color: black;
+    text-decoration: none;
+}
+table {
+    width: 80%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background-color: #f5f5f5;
+}
+
+.checkboxstyle {
+    width: 40px;
+}
+
+.groupstyle {
+    width: 100px;
+}
+
+.namestyle {
+    width: 150px;
+}
+
+.genderstyle {
+    width: 80px;
+}
+
+.birthstyle {
+    width: 120px;
+}
+
+.statstyle {
+    width: 50px;
+    text-align: center;
+}
+
+.optionstyle {
+    width: 100px;
+    text-align: center;
+}
+
+.menu {
+    display: flex;
+    justify-content: space-between; /* Розтягує контент */
+    align-items: center; /* Вирівнює по вертикалі */
+    background-color: rgb(154,0,38);
+    padding: 10px;
+    margin: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    position: fixed;
+    overflow: hidden;
+}
+
+.left-icons {
+    display: flex;
+    align-items: center;
+}
+
+.left-icons img {
+    width: 30px;
+    height: auto;
+}
+
+.right-icons {
+    display: flex;
+    gap: 10px; 
+}
+
+.right-icons img {
+    width: 30px; 
+    height: auto;
+}
+
+main {
+    padding-top: 60px; 
+}
+.editbutton img{
+    width: 20px; 
+    height: auto;
+}
+
+.editbutton{
+    display: flex;
+    gap: 20px; 
+    justify-content: center;
+}
+
+.addnew img{
+    width: 30px; 
+    height: auto;
+}
+.table-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Вирівнює кнопку праворуч */
+    width: 100%; /* Забезпечує розтягнення */
+    
+}
+
+.addnew {
+    margin-bottom: 10px; /* Відступ перед таблицею */
+}
