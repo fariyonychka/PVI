@@ -81,14 +81,19 @@ th {
 
 .right-icons {
     display: flex;
-    gap: 10px; 
+    gap: 20px; 
 }
 
 .right-icons img {
     width: 30px; 
     height: auto;
+    object-fit: contain; 
 }
-
+.userInfo{
+display: flex;
+align-items: center;
+gap: 5px;
+}
 main {
     padding-top: 60px; 
 }
@@ -110,11 +115,40 @@ main {
 .table-container {
     display: flex;
     flex-direction: column;
-    align-items: flex-end; /* Вирівнює кнопку праворуч */
-    width: 100%; /* Забезпечує розтягнення */
-    
+    align-items: flex-end; 
+    width: 90%; 
 }
 
 .addnew {
-    margin-bottom: 10px; /* Відступ перед таблицею */
+    margin-bottom: 10px; 
+}
+
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    gap: 5px; 
+    justify-content: center; 
+    align-items: center;
+}
+
+.pagination button {
+    width: 20px;
+    height: 20px;
+    border: 1px solid black;
+    background-color: white;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.pagination button:hover {
+    background-color: lightgray;
+}
+
+.pagination .active {
+    font-weight: bold;
+    background-color: lightblue;
+}
+
+nav ul li:hover{
+    font-weight: bold;
 }
