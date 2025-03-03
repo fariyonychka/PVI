@@ -1,11 +1,5 @@
 
-aside {
-    width: 20%;
-    padding-left: 15px;
-    margin-left: 0; 
-    float: left;
-    
-}
+
 main {
     display: flex;
     align-items: flex-start; 
@@ -13,10 +7,7 @@ main {
 h1 {
     margin-left: auto; 
 }
-ul>li>a{
-    color: black;
-    text-decoration: none;
-}
+
 table {
     border-collapse: collapse;
 }
@@ -61,7 +52,7 @@ th {
     text-align: center;
 }
 
-.menu {
+/*.menu {
     display: flex;
     justify-content: space-between; 
     background-color: rgb(154,0,38);
@@ -109,7 +100,7 @@ gap: 5px;
     text-overflow: ellipsis;
     max-width: 80px; 
 }
-
+*/
 main {
     padding-top: 60px; 
 }
@@ -166,9 +157,7 @@ main {
     background-color: lightblue;
 }
 
-nav ul li:hover{
-    font-weight: bold;
-}
+
 
 
 /* Для середніх екранів (768px - 1199px) */
@@ -207,12 +196,6 @@ nav ul li:hover{
 
 /* Для телефонів (до 575px) */
 @media screen and (max-width: 575px) {
-    .menu {
-        flex-direction: row;
-        justify-content: space-between; 
-        padding: 5px;
-    }
-    
     main {
         flex-direction: column;
         align-items: center;

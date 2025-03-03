@@ -1,0 +1,56 @@
+.menu {
+    display: flex;
+    justify-content: space-between; 
+    background-color: rgb(154,0,38);
+    padding: 10px;
+    margin: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    position: fixed;
+    flex-wrap: nowrap;
+}
+
+.left-icons {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.left-icons img {
+    width: 30px;
+    height: auto;
+}
+
+.right-icons {
+    display: flex;
+    gap: 10px; 
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.right-icons img {
+    width: 30px; 
+    height: auto;
+    object-fit: contain; 
+}
+.userInfo{
+display: flex;
+align-items: center;
+gap: 5px;
+}
+
+.userInfo p {
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px; 
+}
+
+@media screen and (max-width: 575px) {
+    .menu {
+        flex-direction: row;
+        justify-content: space-between; 
+        padding: 5px;
+    }
+}
