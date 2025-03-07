@@ -24,6 +24,7 @@
                     <img src="more.png" alt="addnew">
                 </div>
                 <table>
+                    <thead>
                     <tr>
                         <th class="checkboxstyle"><input type="checkbox"></th>
                         <th class="groupstyle">Group</th>
@@ -33,6 +34,8 @@
                         <th class="statstyle">Status</th>
                         <th class="optionstyle">Options</th>
                     </tr>
+                </thead>
+                <tbody id="studentTable">
                     <tr>
                         <td><input type="checkbox"></td>
                         <td>KN-21</td>
@@ -46,13 +49,36 @@
                         </td>
                         <td>
                             <div class="editbutton">
-                                <img src="edit.png" alt="edit"> 
+                                <img class="edit" src="edit.png" alt="edit"> 
                                 <img src="trash.png" alt="delete person">
                             </div>
                         </td>
                     </tr>
+                </tbody>
                 </table>
             </div>
+            <div class="overlay" id="overlay"></div>
+    <div class="modal" id="modal">
+        <h2 id="h2Text">Add Student</h2>
+        <label>Group:</label>
+        <input type="text" id="group">
+        <label>First Name:</label>
+        <input type="text" id="firstName">
+        <label>Last Name:</label>
+        <input type="text" id="lastName">
+        <label>Gender:</label>
+        <select id="gender">
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+        </select>
+        <label>Birthday:</label>
+        <input type="date" id="birthday">
+        
+        <div class="modal-buttons">
+            <button id="cancel">Cancel</button>
+            <button id="create">Create</button>
+        </div>
+    </div>
         </div>
     </main>
 
