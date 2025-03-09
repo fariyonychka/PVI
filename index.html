@@ -12,6 +12,13 @@
 <body>
    <header> 
     <div id="header-placeholder"></div>
+
+    <div class="useraccount" id="useraccount">
+        <ul>
+            <li>Profile</li>
+            <li>Log out</li>
+        </ul>
+    </div>
 </header>
     <main>
             <aside>
@@ -50,7 +57,7 @@
                         <td>
                             <div class="editbutton">
                                 <img class="edit" src="edit.png" alt="edit"> 
-                                <img src="trash.png" alt="delete person">
+                                <img class="trash" src="trash.png" alt="delete">
                             </div>
                         </td>
                     </tr>
@@ -77,6 +84,14 @@
         <div class="modal-buttons">
             <button id="cancel">Cancel</button>
             <button id="create">Create</button>
+        </div>
+    </div>
+    <div class="warningModal" id="warningModal">
+        <p><b>Warning</b></p> <br>
+        <label id="textWarning">Are you sure you want to delete user Ann Bond ?</label>
+        <div class="warningModal-buttons">
+            <button id="cancelWarMod">Cancel</button>
+            <button id="okWarMod">Ok</button>
         </div>
     </div>
         </div>

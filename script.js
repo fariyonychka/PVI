@@ -2,6 +2,21 @@ async function loadHeader() {
     let response = await fetch("header.html");
     let data = await response.text();
     document.getElementById("header-placeholder").innerHTML = data;
+    const userBtn = document.querySelector(".right-icons div ");
+    const userAccount = document.getElementById("useraccount");
+    const overlay = document.getElementById("overlay");
+
+    if (userBtn) {
+        userBtn.addEventListener("click", function () {
+            userAccount.classList.toggle("active");
+            overlay.classList.add("active");
+        
+        });
+        overlay.addEventListener("click", function () {
+            userAccount.classList.remove("active");
+            overlay.classList.remove("active");
+        });
+    }
 }
 
 async function loadNav(params) {
@@ -23,6 +38,7 @@ function highlightActivePage() {
     }
 }
 loadHeader();
+loadNav();
 
 document.addEventListener("DOMContentLoaded", function () {
     loadHeader();
@@ -33,12 +49,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const overlay = document.getElementById("overlay");
     const cancelBtn = document.getElementById("cancel");
     const createBtn = document.getElementById("create");
-
+    const warningModal = document.getElementById("warningModal");
     const groupInput = document.getElementById("group");
     const firstNameInput = document.getElementById("firstName");
     const lastNameInput = document.getElementById("lastName");
     const genderInput = document.getElementById("gender");
     const birthdayInput = document.getElementById("birthday"); 
+    const cancelWarMod = document.getElementById("cancelWarMod");
+    const okWarMod = document.getElementById("okWarMod");
 
     let editedRow = null;
 
@@ -66,8 +84,19 @@ document.addEventListener("DOMContentLoaded", function () {
             overlay.classList.add("active");
         });
     }
-
+    function attachDeleteStudentEvent(button){
+        button.addEventListener("click", function(){
+            editedRow=this.closest("tr");
+            const cells = editedRow.getElementsByTagName("td");
+            const nameParts = cells[2].textContent;
+            document.getElementById("textWarning").textContent = `Are you sure you want to delete user ${nameParts} ?`;
+            warningModal.classList.add("active");
+            overlay.classList.add("active");
+        });
+    }
     document.querySelectorAll(".editbutton img[alt='edit']").forEach(attachEditEvent);
+    document.querySelectorAll(".editbutton img[alt='delete']").forEach(attachDeleteStudentEvent);
+
 
     addNewBtn.addEventListener("click", function () {
         editedRow = null; 
@@ -86,9 +115,23 @@ document.addEventListener("DOMContentLoaded", function () {
         modal.classList.remove("active");
         overlay.classList.remove("active");
     });
-
+    cancelWarMod.addEventListener("click", function(){
+        warningModal.classList.remove("active");
+        overlay.classList.remove("active");
+    });
     overlay.addEventListener("click", function () {
         modal.classList.remove("active");
+        overlay.classList.remove("active");
+        warningModal.classList.remove("active");
+
+    });
+
+    okWarMod.addEventListener("click", function(){
+        if (editedRow) {
+            editedRow.remove();
+            editedRow = null;
+        }
+        warningModal.classList.remove("active");
         overlay.classList.remove("active");
     });
 
@@ -123,7 +166,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>
                     <div class="editbutton">
                         <img class="edit" src="edit.png" alt="edit">
-                        <img src="trash.png" alt="delete person">
+                        <img class="trash" src="trash.png" alt="delete">
                     </div>
                 </td>
             `;
@@ -131,6 +174,7 @@ document.addEventListener("DOMContentLoaded", function () {
             table.appendChild(row);
 
             attachEditEvent(row.querySelector(".editbutton img[alt='edit']"));
+            attachDeleteStudentEvent(row.querySelector(".editbutton img[alt='delete']"));
 
         } else if (createBtn.textContent === "Save" && editedRow) {
             const cells = editedRow.getElementsByTagName("td");
