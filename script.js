@@ -2,22 +2,48 @@ async function loadHeader() {
     let response = await fetch("header.html");
     let data = await response.text();
     document.getElementById("header-placeholder").innerHTML = data;
-    const userBtn = document.querySelector(".right-icons div ");
+    attachHeaderEvents();
+
+}
+
+function attachHeaderEvents() {
+    const userBtn = document.querySelector(".userInfo");
     const userAccount = document.getElementById("useraccount");
     const overlay = document.getElementById("overlay");
-
+    const messagBtn=document.querySelector(".message-icon");
+    const messageMod=document.getElementById("messageMod");
     if (userBtn) {
-        userBtn.addEventListener("click", function () {
+        userBtn.addEventListener("mouseenter", function () {
             userAccount.classList.toggle("active");
-            overlay.classList.add("active");
-        
+           //overlay.classList.add("active");
         });
-        overlay.addEventListener("click", function () {
+        userAccount.addEventListener("mouseleave", function () {
             userAccount.classList.remove("active");
-            overlay.classList.remove("active");
+          // overlay.classList.remove("active");
+        });
+    }
+    if(messagBtn){
+        messagBtn.addEventListener("mouseenter", function(){
+            messageMod.classList.toggle("active");
+        });
+        messageMod.addEventListener("mouseleave", function(){
+            messageMod.classList.remove("active");
         });
     }
 }
+
+document.addEventListener("dblclick", function (event) {
+    if (event.target.closest("#message-icon")) {
+        let bell = document.getElementById("bell");
+        let notifDot = document.getElementById("notifDot");
+
+        bell.classList.add("shake");
+        setTimeout(() => {
+            bell.classList.remove("shake");
+            notifDot.style.display = "block";
+        }, 500);
+    }
+});
 
 async function loadNav(params) {
     let response=await fetch("navigation.html");
