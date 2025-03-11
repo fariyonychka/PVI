@@ -1,7 +1,7 @@
 .menu {
     display: flex;
     justify-content: space-between; 
-    background-color: rgb(154,0,38);
+    background-color: rgb(167, 116, 128);
     padding: 10px;
     margin: 0;
     top: 0;
@@ -44,7 +44,8 @@ gap: 5px;
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80px; 
+    max-width: 100px; 
+    font-weight: bold;
 }
 
 .notification-dot {

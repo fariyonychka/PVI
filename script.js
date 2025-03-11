@@ -83,9 +83,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const birthdayInput = document.getElementById("birthday"); 
     const cancelWarMod = document.getElementById("cancelWarMod");
     const okWarMod = document.getElementById("okWarMod");
-
     let editedRow = null;
 
+    document.querySelectorAll(".closeMod").forEach((btn) => {
+        btn.addEventListener("click", function () {
+            modal.classList.remove("active");
+            warningModal.classList.remove("active");
+            overlay.classList.remove("active");
+        });
+    });
     function attachEditEvent(button) {
         button.addEventListener("click", function () {
             editedRow = this.closest("tr"); 
@@ -108,6 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
             createBtn.textContent = "Save";
             modal.classList.add("active");
             overlay.classList.add("active");
+            
         });
     }
     function attachDeleteStudentEvent(button){
@@ -123,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".editbutton img[alt='edit']").forEach(attachEditEvent);
     document.querySelectorAll(".editbutton img[alt='delete']").forEach(attachDeleteStudentEvent);
 
-
+    
     addNewBtn.addEventListener("click", function () {
         editedRow = null; 
         document.getElementById("h2Text").textContent = "Add Student";

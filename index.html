@@ -28,8 +28,11 @@
                 <table>
                     <thead>
                     <tr>
-                        <th class="checkboxstyle"><input type="checkbox"></th>
-                        <th class="groupstyle">Group</th>
+                        <th class="checkboxstyle" scope="col">
+                            <input type="checkbox" aria-label="Select all students">
+                            <span class="visually-hidden">Select</span>
+                        </th>
+                            <th class="groupstyle">Group</th>
                         <th class="namestyle">Name</th>
                         <th class="genderstyle">Gender</th>
                         <th class="birthstyle">Birthday</th>
@@ -39,7 +42,7 @@
                 </thead>
                 <tbody id="studentTable">
                     <tr>
-                        <td><input type="checkbox"></td>
+                        <td><input type="checkbox" aria-label="Select all students"></td>
                         <td>KN-21</td>
                         <td>John Smith</td>
                         <td>M</td>
@@ -62,29 +65,33 @@
             </div>
             <div class="overlay" id="overlay"></div>
     <div class="modal" id="modal">
+        <img src="close.png" alt="close window" class="closeMod">
+        <hr>
         <h2 id="h2Text">Add Student</h2>
-        <label>Group:</label>
+        <label for="group">Group:</label>
         <input type="text" id="group">
-        <label>First Name:</label>
+        <label for="firstName">First Name:</label>
         <input type="text" id="firstName">
-        <label>Last Name:</label>
+        <label for="lastName">Last Name:</label>
         <input type="text" id="lastName">
-        <label>Gender:</label>
+        <label for="gender">Gender:</label>
         <select id="gender">
             <option value="M">Male</option>
             <option value="F">Female</option>
         </select>
-        <label>Birthday:</label>
+        <label for="birthday">Birthday:</label>
         <input type="date" id="birthday">
-        
         <div class="modal-buttons">
             <button id="cancel">Cancel</button>
             <button id="create">Create</button>
         </div>
     </div>
     <div class="warningModal" id="warningModal">
+        <img src="close.png" alt="close window" class="closeMod">
+        <hr>
         <p><b>Warning</b></p> <br>
         <label id="textWarning">Are you sure you want to delete user Ann Bond ?</label>
+        <hr>
         <div class="warningModal-buttons">
             <button id="cancelWarMod">Cancel</button>
             <button id="okWarMod">Ok</button>
