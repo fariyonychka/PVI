@@ -83,6 +83,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const birthdayInput = document.getElementById("birthday"); 
     const cancelWarMod = document.getElementById("cancelWarMod");
     const okWarMod = document.getElementById("okWarMod");
+    const selectAllCheckbox = document.querySelector("th input[type='checkbox']");
+    const studentTable = document.getElementById("studentTable");
     let editedRow = null;
 
     document.querySelectorAll(".closeMod").forEach((btn) => {
@@ -117,12 +119,19 @@ document.addEventListener("DOMContentLoaded", function () {
             
         });
     }
-    function attachDeleteStudentEvent(button){
-        button.addEventListener("click", function(){
-            editedRow=this.closest("tr");
-            const cells = editedRow.getElementsByTagName("td");
-            const nameParts = cells[2].textContent;
-            document.getElementById("textWarning").textContent = `Are you sure you want to delete user ${nameParts} ?`;
+    function attachDeleteStudentEvent(button) {
+        button.addEventListener("click", function () {
+            const allCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");
+            const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
+            
+            if (checkedCheckboxes.length === allCheckboxes.length && checkedCheckboxes.length > 0) {
+                document.getElementById("textWarning").textContent = `Are you sure you want to delete all students?`;
+            } else {
+                editedRow = this.closest("tr");
+                const nameParts = editedRow.getElementsByTagName("td")[2].textContent;
+                document.getElementById("textWarning").textContent = `Are you sure you want to delete user ${nameParts}?`;
+            }
+            
             warningModal.classList.add("active");
             overlay.classList.add("active");
         });
@@ -159,11 +168,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
-    okWarMod.addEventListener("click", function(){
-        if (editedRow) {
+    okWarMod.addEventListener("click", function () {
+        const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
+    
+        if (checkedCheckboxes.length > 0) {
+            checkedCheckboxes.forEach(checkbox => checkbox.closest("tr").remove());
+        } else if (editedRow) {
             editedRow.remove();
             editedRow = null;
         }
+    
         warningModal.classList.remove("active");
         overlay.classList.remove("active");
     });
@@ -224,6 +238,23 @@ document.addEventListener("DOMContentLoaded", function () {
         firstNameInput.value = "";
         lastNameInput.value = "";
         birthdayInput.value = "";
+    });
+
+    function updateSelectAllCheckbox() {
+        const allCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");
+        const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
+        selectAllCheckbox.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
+    }
+
+    selectAllCheckbox.addEventListener("change", function () {
+        const checkboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");
+        checkboxes.forEach(checkbox => checkbox.checked = selectAllCheckbox.checked);
+    });
+
+    studentTable.addEventListener("change", function (event) {
+        if (event.target.type === "checkbox") {
+            updateSelectAllCheckbox();
+        }
     });
 });
 
