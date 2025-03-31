@@ -66,6 +66,7 @@ function highlightActivePage() {
 loadHeader();
 loadNav();
 
+
 document.addEventListener("DOMContentLoaded", function () {
     loadHeader();
     loadNav();
@@ -86,6 +87,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectAllCheckbox = document.querySelector("th input[type='checkbox']");
     const studentTable = document.getElementById("studentTable");
     let editedRow = null;
+    const useJSValidation = document.getElementById("validationType").value === "js";
+    if (useJSValidation) {
+        document.getElementById("studentForm").setAttribute("novalidate", "true");
+    }
 
     document.querySelectorAll(".closeMod").forEach((btn) => {
         btn.addEventListener("click", function () {
@@ -94,10 +99,21 @@ document.addEventListener("DOMContentLoaded", function () {
             overlay.classList.remove("active");
         });
     });
+
+    function resetValidation() {
+        document.querySelectorAll(".error-span").forEach(span => {
+            span.style.visibility = "hidden";
+        });
+        document.querySelectorAll("input").forEach(input => {
+            input.classList.remove("invalid");
+        });
+    }
     function attachEditEvent(button) {
         button.addEventListener("click", function () {
             editedRow = this.closest("tr"); 
             const cells = editedRow.getElementsByTagName("td");
+            
+            resetValidation();
 
             groupInput.value = cells[1].textContent;
             const nameParts = cells[2].textContent.split(" ");
@@ -139,9 +155,55 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".editbutton img[alt='edit']").forEach(attachEditEvent);
     document.querySelectorAll(".editbutton img[alt='delete']").forEach(attachDeleteStudentEvent);
 
+    document.getElementById("studentForm").addEventListener("submit", function (event) {
+        if (useJSValidation) {
+            event.preventDefault(); 
+            if (!validateStudent({
+                group: groupInput.value.trim(),
+                firstName: firstNameInput.value.trim(),
+                lastName: lastNameInput.value.trim(),
+                gender: genderInput.value,
+                birthday: birthdayInput.value
+            })) {
+                return; 
+            }
+        } else {
+            event.preventDefault(); 
+        }
+    
+        const student = {
+            group: groupInput.value.trim(),
+            firstName: firstNameInput.value.trim(),
+            lastName: lastNameInput.value.trim(),
+            gender: genderInput.value,
+            birthday: birthdayInput.value
+        };
+    
+        if (createBtn.textContent === "Create") {
+            addStudentToTable(student);
+        } else if (createBtn.textContent === "Save" && editedRow) {
+            const cells = editedRow.getElementsByTagName("td");
+            cells[1].textContent = student.group;
+            cells[2].textContent = `${student.firstName} ${student.lastName}`;
+            cells[3].textContent = student.gender;
+            cells[4].textContent = student.birthday;
+            console.log("Updated Student:", JSON.stringify(student, null, 2));
+
+        }
+    
+        modal.classList.remove("active");
+        overlay.classList.remove("active");
+    
+        document.getElementById("studentForm").reset();
+    });
+    
+    
     
     addNewBtn.addEventListener("click", function () {
         editedRow = null; 
+
+        resetValidation();
+
         document.getElementById("h2Text").textContent = "Add Student";
         createBtn.textContent = "Create";
         modal.classList.add("active");
@@ -182,63 +244,82 @@ document.addEventListener("DOMContentLoaded", function () {
         overlay.classList.remove("active");
     });
 
-    createBtn.addEventListener("click", function () {
-        const group = groupInput.value;
-        const firstName = firstNameInput.value;
-        const lastName = lastNameInput.value;
-        const gender = genderInput.value;
-        const birthday = birthdayInput.value;
-
-        if (!group || !firstName || !lastName || !birthday) {
-            alert("Please fill in all fields.");
-            return;
+    function validateStudent(student) {
+        let isValid = true;
+    
+        document.querySelectorAll(".error-span").forEach(span => span.style.visibility = "hidden");
+        document.querySelectorAll("input").forEach(input => input.classList.remove("invalid"));
+    
+        if (!useJSValidation) {
+            return true; 
         }
-
-        if (createBtn.textContent === "Create") {
-            // Додаємо нового студента
-            const table = document.getElementById("studentTable");
-            const row = document.createElement("tr");
-
-            row.innerHTML = `
-                <td><input type="checkbox"></td>
-                <td>${group}</td>
-                <td>${firstName} ${lastName}</td>
-                <td>${gender}</td>
-                <td>${birthday}</td>
-                <td>
-                    <svg width="10" height="10">
-                        <circle cx="5" cy="5" r="5" fill="gray" />
-                    </svg>
-                </td>
-                <td>
-                    <div class="editbutton">
-                        <img class="edit" src="edit.png" alt="edit">
-                        <img class="trash" src="trash.png" alt="delete">
-                    </div>
-                </td>
-            `;
-
-            table.appendChild(row);
-
-            attachEditEvent(row.querySelector(".editbutton img[alt='edit']"));
-            attachDeleteStudentEvent(row.querySelector(".editbutton img[alt='delete']"));
-
-        } else if (createBtn.textContent === "Save" && editedRow) {
-            const cells = editedRow.getElementsByTagName("td");
-            cells[1].textContent = group;
-            cells[2].textContent = `${firstName} ${lastName}`;
-            cells[3].textContent = gender;
-            cells[4].textContent = birthday;
+    
+        const groupPattern = /^[A-Z]{2}-\d{2}$/;
+        if (!groupPattern.test(student.group)) {
+            document.getElementById("error-span-group").style.visibility = "visible";
+            groupInput.classList.add("invalid");
+            isValid = false;
         }
-
-        modal.classList.remove("active");
-        overlay.classList.remove("active");
-
-        groupInput.value = "";
-        firstNameInput.value = "";
-        lastNameInput.value = "";
-        birthdayInput.value = "";
-    });
+    
+        const namePattern = /^[A-Z][a-z]+$/;
+        if (!namePattern.test(student.firstName)) {
+            document.getElementById("error-span-name").style.visibility = "visible";
+            firstNameInput.classList.add("invalid");
+            isValid = false;
+        }
+        if (!namePattern.test(student.lastName)) {
+            document.getElementById("error-span-surname").style.visibility = "visible";
+            lastNameInput.classList.add("invalid");
+            isValid = false;
+        }
+    
+        if (!student.gender) {
+            document.getElementById("error-span-gender").style.visibility = "visible";
+            genderInput.classList.add("invalid");
+            isValid = false;
+        }
+    
+        if (!student.birthday) {
+            document.getElementById("error-span-date").style.visibility = "visible";
+            birthdayInput.classList.add("invalid");
+            isValid = false;
+        }
+    
+        return isValid;
+    }
+    
+    function addStudentToTable(student) {
+        const table = document.getElementById("studentTable");
+        const row = document.createElement("tr");
+    
+        row.innerHTML = `
+            <td><input type="checkbox"></td>
+            <td>${student.group}</td>
+            <td>${student.firstName} ${student.lastName}</td>
+            <td>${student.gender}</td>
+            <td>${student.birthday}</td>
+            <td>
+                <svg width="10" height="10">
+                    <circle cx="5" cy="5" r="5" fill="gray" />
+                </svg>
+            </td>
+            <td>
+                <div class="editbutton">
+                    <img class="edit" src="edit.png" alt="edit">
+                    <img class="trash" src="trash.png" alt="delete">
+                </div>
+            </td>
+        `;
+    
+        table.appendChild(row);
+        attachEditEvent(row.querySelector(".editbutton img[alt='edit']"));
+        attachDeleteStudentEvent(row.querySelector(".editbutton img[alt='delete']"));
+    }
+    
+    
+    
+    
+    
 
     function updateSelectAllCheckbox() {
         const allCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");

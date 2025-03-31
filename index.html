@@ -64,28 +64,41 @@
             </div>
             </div>
             <div class="overlay" id="overlay"></div>
-    <div class="modal" id="modal">
-        <img src="close.png" alt="close window" class="closeMod">
-        <hr>
-        <h2 id="h2Text">Add Student</h2>
-        <label for="group">Group:</label>
-        <input type="text" id="group">
-        <label for="firstName">First Name:</label>
-        <input type="text" id="firstName">
-        <label for="lastName">Last Name:</label>
-        <input type="text" id="lastName">
-        <label for="gender">Gender:</label>
-        <select id="gender">
-            <option value="M">Male</option>
-            <option value="F">Female</option>
-        </select>
-        <label for="birthday">Birthday:</label>
-        <input type="date" id="birthday">
-        <div class="modal-buttons">
-            <button id="cancel">Cancel</button>
-            <button id="create">Create</button>
-        </div>
-    </div>
+            <div class="modal" id="modal">
+                <img src="close.png" alt="close window" class="closeMod">
+                <hr>
+                <h2 id="h2Text">Add Student</h2>
+                <form id="studentForm">
+                    <input type="hidden" id="studentId">
+                    <input type="hidden" id="validationType" value="js">
+                    <label for="group">Group:</label>
+                    <input type="text" id="group" required pattern="[A-Z]{2}-\d{2}" title="Please enter correct data (For example: KN-21, PZ-32)">
+                    <span class="error-span" id="error-span-group">Please enter correct data (For example: KN-21, PZ-32)</span><br>
+                    <label for="firstName">First Name:</label>
+                    <input type="text" id="firstName" required pattern="^[A-Z][a-z]+$" title="Please enter correct data (First name must start with an uppercase letter)">
+                    <span class="error-span" id="error-span-name">Please enter correct data (First name must start with an uppercase letter)</span><br>
+
+                    <label for="lastName">Last Name:</label>
+                    <input type="text" id="lastName" required pattern="^[A-Z][a-z]+$" title="Please enter correct data(Last name must start with an uppercase letter)">
+                    <span class="error-span" id="error-span-surname">Please enter correct data(Last name must start with an uppercase letter)</span><br>
+
+                    <label for="gender">Gender:</label>
+                    <select id="gender" required>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                    <span class="error-span" id="error-span-gender">Please select gender</span><br>
+
+                    <label for="birthday">Birthday:</label>
+                    <input type="date" id="birthday" required>
+                    <span class="error-span" id="error-span-date">Please select birthday date</span><br>
+
+                    <div class="modal-buttons">
+                        <button type="button" id="cancel">Cancel</button>
+                        <button type="submit" id="create">Create</button>
+                    </div>
+                </form>
+            </div>
     <div class="warningModal" id="warningModal">
         <img src="close.png" alt="close window" class="closeMod">
         <hr>
