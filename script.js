@@ -1,34 +1,45 @@
 async function loadHeader() {
     let response = await fetch("header.html");
     let data = await response.text();
-    document.getElementById("header-placeholder").innerHTML = data;
-    attachHeaderEvents();
+    let headerPlaceholder = document.getElementById("header-placeholder");
 
+    if (headerPlaceholder) {
+        headerPlaceholder.innerHTML = data;
+        document.dispatchEvent(new Event("headerLoaded")); // Оповіщаємо, що заголовок завантажений
+    }
 }
 
+document.addEventListener("headerLoaded", function () {
+    attachHeaderEvents();
+});
 function attachHeaderEvents() {
     const userBtn = document.querySelector(".userInfo");
     const userAccount = document.getElementById("useraccount");
-    const overlay = document.getElementById("overlay");
-    const messagBtn=document.querySelector(".message-icon");
-    const messageMod=document.getElementById("messageMod");
-    if (userBtn) {
+    const messagBtn = document.querySelector(".message-icon");
+    const messageMod = document.getElementById("messageMod");
+
+    if (userBtn && userAccount) {
         userBtn.addEventListener("mouseenter", function () {
             userAccount.classList.toggle("active");
-           //overlay.classList.add("active");
         });
+
         userAccount.addEventListener("mouseleave", function () {
             userAccount.classList.remove("active");
-          // overlay.classList.remove("active");
         });
+    } else {
+        console.warn("Не знайдено елементи для користувацького меню.");
     }
-    if(messagBtn){
-        messagBtn.addEventListener("mouseenter", function(){
+
+    if (messagBtn && messageMod) {
+        messagBtn.addEventListener("mouseenter", function () {
             messageMod.classList.toggle("active");
         });
-        messageMod.addEventListener("mouseleave", function(){
+
+        messageMod.addEventListener("mouseleave", function () {
             messageMod.classList.remove("active");
         });
+    } else {
+        console.warn("Не знайдено елементи для повідомлень.");
     }
 }
 
@@ -37,13 +48,16 @@ document.addEventListener("dblclick", function (event) {
         let bell = document.getElementById("bell");
         let notifDot = document.getElementById("notifDot");
 
-        bell.classList.add("shake");
+        if (bell) bell.classList.add("shake"); // Переконайтесь, що `bell` існує
+        if (notifDot) notifDot.style.display = "block";
+
         setTimeout(() => {
             bell.classList.remove("shake");
-            notifDot.style.display = "block";
+            if (notifDot) notifDot.style.display = "block";
         }, 500);
     }
 });
+
 
 async function loadNav(params) {
     let response=await fetch("navigation.html");
@@ -68,8 +82,6 @@ loadNav();
 
 
 document.addEventListener("DOMContentLoaded", function () {
-    loadHeader();
-    loadNav();
     
     const addNewBtn = document.querySelector(".addnew img");
     const modal = document.getElementById("modal");
@@ -87,10 +99,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectAllCheckbox = document.querySelector("th input[type='checkbox']");
     const studentTable = document.getElementById("studentTable");
     let editedRow = null;
-    const useJSValidation = document.getElementById("validationType").value === "js";
-    if (useJSValidation) {
+    const validationTypeElement = document.getElementById("validationType");
+    const useJSValidation = validationTypeElement ? validationTypeElement.value === "js" : false;
+        if (useJSValidation) {
         document.getElementById("studentForm").setAttribute("novalidate", "true");
     }
+
 
     document.querySelectorAll(".closeMod").forEach((btn) => {
         btn.addEventListener("click", function () {
@@ -155,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".editbutton img[alt='edit']").forEach(attachEditEvent);
     document.querySelectorAll(".editbutton img[alt='delete']").forEach(attachDeleteStudentEvent);
 
-    document.getElementById("studentForm").addEventListener("submit", function (event) {
+    document.getElementById("studentForm")?.addEventListener("submit", function (event) {
         if (useJSValidation) {
             event.preventDefault(); 
             if (!validateStudent({
@@ -199,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     
     
-    addNewBtn.addEventListener("click", function () {
+    addNewBtn?.addEventListener("click", function () {
         editedRow = null; 
 
         resetValidation();
@@ -215,22 +229,22 @@ document.addEventListener("DOMContentLoaded", function () {
         birthdayInput.value = "";
     });
 
-    cancelBtn.addEventListener("click", function () {
+    cancelBtn?.addEventListener("click", function () {
         modal.classList.remove("active");
         overlay.classList.remove("active");
     });
-    cancelWarMod.addEventListener("click", function(){
+    cancelWarMod?.addEventListener("click", function(){
         warningModal.classList.remove("active");
         overlay.classList.remove("active");
     });
-    overlay.addEventListener("click", function () {
+    overlay?.addEventListener("click", function () {
         modal.classList.remove("active");
         overlay.classList.remove("active");
         warningModal.classList.remove("active");
 
     });
 
-    okWarMod.addEventListener("click", function () {
+    okWarMod?.addEventListener("click", function () {
         const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
     
         if (checkedCheckboxes.length > 0) {
@@ -327,16 +341,20 @@ document.addEventListener("DOMContentLoaded", function () {
         selectAllCheckbox.checked = allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length;
     }
 
-    selectAllCheckbox.addEventListener("change", function () {
+    selectAllCheckbox?.addEventListener("change", function () {
         const checkboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");
         checkboxes.forEach(checkbox => checkbox.checked = selectAllCheckbox.checked);
     });
 
-    studentTable.addEventListener("change", function (event) {
+    studentTable?.addEventListener("change", function (event) {
         if (event.target.type === "checkbox") {
             updateSelectAllCheckbox();
         }
     });
 });
 
-
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js")
+        .then(() => console.log("Service Worker зареєстровано"))
+        .catch(err => console.error("Помилка реєстрації Service Worker", err));
+}
