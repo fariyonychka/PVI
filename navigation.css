@@ -21,6 +21,12 @@ nav >ul > li:hover {
 ul > li > a.active {
     font-weight: bold;
 }
+
+ul > li.active {
+    font-weight: bold;
+    background-color: rgb(200, 200, 200); /* Колір для активного елемента */
+}
+
 @media screen and (max-width: 575px) {
     aside {
         width: 100%;

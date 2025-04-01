@@ -69,14 +69,14 @@ function highlightActivePage() {
     let links = document.querySelectorAll("nav ul li a");
     let currentPage = window.location.pathname.split("/").pop(); 
     
-    for(let i=0; i<links.length; i++)
-    {
-        if(links[i].getAttribute("href")==currentPage)
-        {
+    for(let i = 0; i < links.length; i++) {
+        if (links[i].getAttribute("href") === currentPage) {
             links[i].classList.add("active");
+            links[i].parentElement.classList.add("active"); // Додаємо до <li>
         }
     }
 }
+
 loadHeader();
 loadNav();
 
