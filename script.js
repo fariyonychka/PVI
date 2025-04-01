@@ -72,7 +72,7 @@ function highlightActivePage() {
     for(let i = 0; i < links.length; i++) {
         if (links[i].getAttribute("href") === currentPage) {
             links[i].classList.add("active");
-            links[i].parentElement.classList.add("active"); // Додаємо до <li>
+            links[i].parentElement.classList.add("active"); 
         }
     }
 }
@@ -264,7 +264,13 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll(".error-span").forEach(span => span.style.visibility = "hidden");
         document.querySelectorAll("input").forEach(input => input.classList.remove("invalid"));
     
-        if (!useJSValidation) {
+        let groupInput = document.getElementById("group");
+        let firstNameInput = document.getElementById("firstName");
+        let lastNameInput = document.getElementById("lastName");
+        let genderInput = document.getElementById("gender");
+        let birthdayInput = document.getElementById("birthday");
+    
+        if (typeof useJSValidation !== "undefined" && !useJSValidation) {
             return true; 
         }
     
@@ -275,12 +281,13 @@ document.addEventListener("DOMContentLoaded", function () {
             isValid = false;
         }
     
-        const namePattern = /^[A-Z][a-z]+$/;
+        const namePattern = /^[A-Z][a-z]+([-'’][A-Z]?[a-z]+)*$/;
         if (!namePattern.test(student.firstName)) {
             document.getElementById("error-span-name").style.visibility = "visible";
             firstNameInput.classList.add("invalid");
             isValid = false;
-        }
+        } 
+    
         if (!namePattern.test(student.lastName)) {
             document.getElementById("error-span-surname").style.visibility = "visible";
             lastNameInput.classList.add("invalid");
@@ -293,10 +300,29 @@ document.addEventListener("DOMContentLoaded", function () {
             isValid = false;
         }
     
-        if (!student.birthday) {
+        const today = new Date();
+        const minAge = 16; 
+        const maxAge = 100; 
+        const birthday = new Date(student.birthday);
+    
+        if (!student.birthday || isNaN(birthday.getTime())) {
             document.getElementById("error-span-date").style.visibility = "visible";
             birthdayInput.classList.add("invalid");
             isValid = false;
+        } else {
+            let age = today.getFullYear() - birthday.getFullYear();
+            let monthDiff = today.getMonth() - birthday.getMonth();
+            let dayDiff = today.getDate() - birthday.getDate();
+    
+            if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                age--; 
+            }
+    
+            if (age < minAge || age > maxAge) {
+                document.getElementById("error-span-date").style.visibility = "visible";
+                birthdayInput.classList.add("invalid");
+                isValid = false;
+            }
         }
     
         return isValid;
