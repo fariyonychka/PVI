@@ -17,11 +17,11 @@ const ASSETS = [
   "/studenticon.png",
   "/trash.png",
   "/usericon.png",
-  "/icon",
+  
   "/icon/icon-96x96.png",
   "/icon/icon-128x128.png",
   "/icon/icon-144x144.png",
-  "/screenshots",
+  
   "/screenshots/screenshot1.png"
 ];
 

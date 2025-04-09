@@ -41,14 +41,66 @@ function attachHeaderEvents() {
     } else {
         console.warn("Не знайдено елементи для повідомлень.");
     }
+
+    const loginModal = document.getElementById("loginModal");
+    const loginBtn = document.getElementById("loginButton");
+    const closeLogin = document.getElementById("closeLogin");
+    const confirmLogin = document.getElementById("confirmLogin");
+
+    loginBtn?.addEventListener("click", () => {
+        loginModal.style.display = "block";
+    });
+
+    closeLogin?.addEventListener("click", () => {
+        loginModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (e) => {
+        if (e.target === loginModal) {
+            loginModal.style.display = "none";
+        }
+    });
+
+    confirmLogin?.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const login = document.getElementById("loginInput").value;
+        const password = document.getElementById("passwordInput").value;
+
+        const res = await fetch("server/index.php/api/login", {
+            method: "POST",
+            body: JSON.stringify({ login, password }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Помилка на сервері:", text);
+            alert("Сервер повернув помилку");
+            return;
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+            location.reload();
+        } else {
+            alert("Wrong credentials");
+        }
+    });
+
+    
 }
+
+
 
 document.addEventListener("dblclick", function (event) {
     if (event.target.closest("#message-icon")) {
         let bell = document.getElementById("bell");
         let notifDot = document.getElementById("notifDot");
 
-        if (bell) bell.classList.add("shake"); // Переконайтесь, що `bell` існує
+        if (bell) bell.classList.add("shake"); 
         if (notifDot) notifDot.style.display = "block";
 
         setTimeout(() => {

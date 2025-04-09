@@ -1,0 +1,14 @@
+[
+    {
+      "id": 1,
+      "group": "KN-21",
+      "firstName": "John",
+      "lastName": "Smith",
+      "gender": "M",
+      "birthday": "2004-05-11",
+      "status": "offline",
+      "login": "john",
+      "password": "2004-05-11"
+    }
+  ]
+  
