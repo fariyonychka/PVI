@@ -1,17 +1,95 @@
+loadHeader();
+loadNav();
 async function loadHeader() {
-    let response = await fetch("header.html");
+    let response = await fetch("./header.html");
     let data = await response.text();
     let headerPlaceholder = document.getElementById("header-placeholder");
 
     if (headerPlaceholder) {
         headerPlaceholder.innerHTML = data;
-        document.dispatchEvent(new Event("headerLoaded")); // Оповіщаємо, що заголовок завантажений
+        document.dispatchEvent(new Event("headerLoaded"));
     }
 }
 
-document.addEventListener("headerLoaded", function () {
-    attachHeaderEvents();
+document.addEventListener("headerLoaded", async function () {
+    try {
+        const response = await safeFetch("/PVI/server/index.php/api/user", {
+            method: "GET",
+            headers: {
+                "Cache-Control": "no-cache"
+            }
+        }, { silent401: true });
+        console.log("Користувач з сервера:", response);
+        
+        const user = response;
+        console.log("user:", user);
+        console.log("user.login:", user?.login);
+                
+        attachHeaderEvents();
+        
+        if (user && user.login) {
+            localStorage.setItem("user", JSON.stringify(user));
+            console.log("renderUserUI викликано з:", user);
+            renderUserUI(user);
+        } else {
+            localStorage.removeItem("user");
+            console.log("🔧 renderUserUI викликано з: null");
+            renderUserUI(null);
+        }
+        
+    } catch (error) {
+        if (error.message === "Unauthorized") {
+            console.log("Користувач не авторизований — показуємо гостьовий режим");
+        } else {
+            console.warn("Не вдалося отримати user:", error);
+        }
+        localStorage.removeItem("user");
+        attachHeaderEvents(); 
+        renderUserUI(null);
+    }
 });
+function renderUserUI(user) {
+    console.log("renderUserUI викликано з:", user);
+    const loginBtn = document.getElementById("loginButton");
+    const logoutBtn = document.getElementById("logoutBtn"); 
+    const userInfoBlock = document.getElementById("userInfo");
+    const protectedElements = document.querySelectorAll(".needs-auth");
+    if (!loginBtn || !logoutBtn || !userInfoBlock) {
+        console.warn("❗ Один або кілька елементів не знайдені в DOM");
+    }
+
+    const isLoggedIn = user && user.id && user.login;
+
+    if (isLoggedIn) {
+        loginBtn?.classList.add("hidden");
+        logoutBtn?.classList.remove("hidden");
+        userInfoBlock?.classList.remove("hidden");
+        const userLoginText = document.getElementById("userLoginText");
+        if (userLoginText) {
+            userLoginText.textContent = user.login;
+        }
+        protectedElements.forEach(el => {
+            el.classList.remove("disabled-link");
+            el.style.pointerEvents = "auto";
+            el.style.opacity = "1";
+        });
+
+            fetchStudents();
+        
+    } else {
+        loginBtn?.classList.remove("hidden");
+        logoutBtn?.classList.add("hidden");
+        userInfoBlock?.classList.add("hidden");
+
+        protectedElements.forEach(el => {
+            el.classList.add("disabled-link");
+            el.style.pointerEvents = "none"; 
+            el.style.opacity = "0.5";        
+        });    
+    }
+}
+
+
 function attachHeaderEvents() {
     const userBtn = document.querySelector(".userInfo");
     const userAccount = document.getElementById("useraccount");
@@ -61,40 +139,107 @@ function attachHeaderEvents() {
         }
     });
 
-    confirmLogin?.addEventListener("click", async (e) => {
+
+
+    confirmLogin?.addEventListener("click", async (e) => { 
         e.preventDefault();
         const login = document.getElementById("loginInput").value;
         const password = document.getElementById("passwordInput").value;
-
-        const res = await fetch("server/index.php/api/login", {
-            method: "POST",
-            body: JSON.stringify({ login, password }),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            console.error("Помилка на сервері:", text);
-            alert("Сервер повернув помилку");
-            return;
+    
+        try {
+            const data = await safeFetch("/PVI/server/index.php/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ login, password }), 
+            });
+    
+            if (data.success) {
+                console.log("Користувач залогінився:", data.user); 
+            localStorage.setItem("user", JSON.stringify(data.user));
+            window.location.reload();
+            } else {
+                throw new Error(data.error || "Невідома помилка входу");
+            }
+        } catch (err) {
+            alert("Помилка входу: " + err.message);
         }
 
-        const data = await res.json();
-
-        if (data.success) {
-            location.reload();
-        } else {
-            alert("Wrong credentials");
-        }
+        
     });
 
+    document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+        await safeFetch("/PVI/server/index.php/api/logout", {
+            method: "POST"
+        });
+        localStorage.removeItem("user");
+        window.location.reload(); 
+    });
     
 }
 
 
+async function safeFetch(url, options = {}, config = {}) {
+    const { silent401 = false } = config;
 
+    try {
+        const response = await fetch(url, options);
+        const data = await response.json(); 
+
+        if (!response.ok) {
+            const error = new Error(data?.error || 'Unknown server error');
+            error.status = response.status;
+            throw error;
+        }
+
+        return data;
+    } catch (error) {
+        if (silent401 && error.status === 401) {
+        } else {
+            console.error("Fetch error:", error.message);
+        }
+        throw error;
+    }
+}
+
+async function fetchStudents() {
+    try {
+        const response = await fetch('/PVI/server/index.php/api/students');
+        const students = await response.json();
+        renderStudentsTable(students);
+    } catch (error) {
+        console.error("Помилка при завантаженні студентів:", error);
+    }
+}
+
+function renderStudentsTable(students) {
+    const tableBody = document.getElementById("studentTable");
+    tableBody.innerHTML = ""; 
+
+    students.forEach(student => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+        <td><input type="checkbox"></td>
+            <td>${student.student_group}</td>
+            <td>${student.first_name} ${student.last_name}</td>
+            <td>${student.gender}</td>
+            <td>${student.birthday}</td>
+            <td>
+                <svg width="10" height="10">
+                    <circle cx="5" cy="5" r="5" fill="${student.status === 'active' ? 'green' : 'gray'}" />
+                </svg>
+            </td>
+            <td>
+                <div class="editbutton needs-auth">
+                    <img class="edit" src="edit.png" alt="edit"> 
+                    <img class="trash" src="trash.png" alt="delete">
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
 document.addEventListener("dblclick", function (event) {
     if (event.target.closest("#message-icon")) {
         let bell = document.getElementById("bell");
@@ -112,7 +257,7 @@ document.addEventListener("dblclick", function (event) {
 
 
 async function loadNav(params) {
-    let response=await fetch("navigation.html");
+    let response=await fetch("./navigation.html");
     let data = await response.text();
     document.getElementById("navigation-placeholder").innerHTML=data;
     highlightActivePage();
@@ -129,10 +274,7 @@ function highlightActivePage() {
     }
 }
 
-loadHeader();
-loadNav();
-
-
+let editedRow = null;
 document.addEventListener("DOMContentLoaded", function () {
     
     const addNewBtn = document.querySelector(".addnew img");
@@ -150,7 +292,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const okWarMod = document.getElementById("okWarMod");
     const selectAllCheckbox = document.querySelector("th input[type='checkbox']");
     const studentTable = document.getElementById("studentTable");
-    let editedRow = null;
     const validationTypeElement = document.getElementById("validationType");
     const useJSValidation = validationTypeElement ? validationTypeElement.value === "js" : false;
         if (useJSValidation) {
@@ -408,11 +549,6 @@ document.addEventListener("DOMContentLoaded", function () {
         attachDeleteStudentEvent(row.querySelector(".editbutton img[alt='delete']"));
     }
     
-    
-    
-    
-    
-
     function updateSelectAllCheckbox() {
         const allCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");
         const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
@@ -432,7 +568,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js")
+    navigator.serviceWorker.register("./sw.js")
         .then(() => console.log("Service Worker зареєстровано"))
         .catch(err => console.error("Помилка реєстрації Service Worker", err));
 }

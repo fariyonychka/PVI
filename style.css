@@ -21,6 +21,14 @@ th, td {
 th {
     background-color: #f5f5f5;
 }
+.hidden {
+    display: none !important;
+}
+.disabled-link {
+    cursor: not-allowed;
+    text-decoration: line-through; /* або інший стиль, щоб було видно */
+    color: gray;
+}
 
 .visually-hidden {
     position: absolute;

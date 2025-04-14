@@ -1,28 +1,26 @@
 const CACHE_NAME = "pwa-cache-v1";
 const ASSETS = [
-  "/",
-  "/index.html",
-  "/dashboard.html",
-  "/messages.html",
-  "/students.html",
-  "/tasks.html",
-  "/style.css",
-  "/header.css",
-  "/navigation.css",
-  "/script.js",
-  "/christmas-bell.png",
-  "/close.png",
-  "/edit.png",
-  "/more.png",
-  "/studenticon.png",
-  "/trash.png",
-  "/usericon.png",
-  
-  "/icon/icon-96x96.png",
-  "/icon/icon-128x128.png",
-  "/icon/icon-144x144.png",
-  
-  "/screenshots/screenshot1.png"
+  "./",
+  "./index.html",
+  "./dashboard.html",
+  "./messages.html",
+  "./students.html",
+  "./tasks.html",
+  "./style.css",
+  "./header.css",
+  "./navigation.css",
+  "./script.js",
+  "./christmas-bell.png",
+  "./close.png",
+  "./edit.png",
+  "./more.png",
+  "./studenticon.png",
+  "./trash.png",
+  "./usericon.png",
+  "./icon/icon-96x96.png",
+  "./icon/icon-128x128.png",
+  "./icon/icon-144x144.png",
+  "./screenshots/screenshot1.png"
 ];
 
 // Встановлення Service Worker
@@ -38,21 +36,29 @@ self.addEventListener("install", (event) => {
   });
 
 // Обробка запитів (кеш або мережа)
-self.addEventListener("fetch", (event) => {
-    if (!event.request.url.startsWith("http")) {
-        return; // Ігноруємо запити до chrome-extension://
-    }
-    event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request).then((networkResponse) => {
-                return caches.open("v1").then((cache) => {
-                    cache.put(event.request, networkResponse.clone());
-                    return networkResponse;
-                });
-            });
-        })
-    );
+self.addEventListener("fetch", function (event) {
+  const url = new URL(event.request.url);
+
+  // Не кешуємо API-запити (з `/api/`)
+  if (url.pathname.startsWith("/PVI/server/index.php/api/")) {
+    return; // Дозволяємо браузеру робити звичайний запит
+  }
+
+  if (event.request.method !== "GET" || !event.request.url.startsWith("http")) return;
+
+  event.respondWith(
+    caches.open(CACHE_NAME).then(function (cache) {
+      return cache.match(event.request).then(function (cachedResponse) {
+        return cachedResponse || fetch(event.request).then(function (response) {
+          cache.put(event.request.clone(), response.clone());
+          return response;
+        });
+      });
+    })
+  );
 });
+
+
 
   
 
