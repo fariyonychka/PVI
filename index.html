@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="header.css">
     <link rel="stylesheet" href="navigation.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icon/icon-128x128.png">
+    <link rel="icon" href="./icon/icon-128x128.png">
 </head>
 <body>
    <header> 
@@ -22,7 +22,7 @@
             <div class="content">
             <h1>Students</h1>
             <div class="table-container">
-                <div class="addnew">
+                <div class="addnew needs-auth">
                     <img src="more.png" alt="addnew">
                 </div>
                 <div class="container">
@@ -44,6 +44,7 @@
                 <tbody id="studentTable">
                     <tr>
                         <td><input type="checkbox" aria-label="Select all students"></td>
+                        <td style="display:none;" class="studentId">1</td>
                         <td>KN-21</td>
                         <td>John Smith</td>
                         <td>M</td>
@@ -54,7 +55,7 @@
                             </svg>
                         </td>
                         <td>
-                            <div class="editbutton">
+                            <div class="editbutton needs-auth">
                                 <img class="edit" src="edit.png" alt="edit"> 
                                 <img class="trash" src="trash.png" alt="delete">
                             </div>
@@ -70,18 +71,17 @@
                 <hr>
                 <h2 id="h2Text">Add Student</h2>
                 <form id="studentForm">
-                    <input type="hidden" id="studentId">
                     <input type="hidden" id="validationType" value="js">
-                    <label for="group">Group:</label>
-                    <input type="text" id="group" required pattern="[A-Z]{2}-\d{2}" title="Please enter correct data (For example: KN-21, PZ-32)">
-                    <span class="error-span" id="error-span-group">Please enter correct data (For example: KN-21, PZ-32)</span><br>
-                    <label for="firstName">First Name:</label>
-                    <input type="text" id="firstName" required pattern="^[A-Z][a-z]+$" title="Please enter correct data (First name must start with an uppercase letter)">
-                    <span class="error-span" id="error-span-name">Please enter correct data (First name must start with an uppercase letter)</span><br>
+                    <label for="student_group">Group:</label>
+                    <input type="text" id="student_group" required pattern="[A-Z]{2}-\d{2}" title="Please enter correct data (For example: KN-21, PZ-32)">
+                    <span class="error-span" id="error-span-student_group">Please enter correct data (For example: KN-21, PZ-32)</span><br>
+                    <label for="first_name">First Name:</label>
+                    <input type="text" id="first_name" required pattern="^[A-Z][a-z]+$" title="Please enter correct data (First name must start with an uppercase letter)">
+                    <span class="error-span" id="error-span-first_name">Please enter correct data (First name must start with an uppercase letter)</span><br>
 
-                    <label for="lastName">Last Name:</label>
-                    <input type="text" id="lastName" required pattern="^[A-Z][a-z]+$" title="Please enter correct data(Last name must start with an uppercase letter)">
-                    <span class="error-span" id="error-span-surname">Please enter correct data(Last name must start with an uppercase letter)</span><br>
+                    <label for="last_name">Last Name:</label>
+                    <input type="text" id="last_name" required pattern="^[A-Z][a-z]+$" title="Please enter correct data(Last name must start with an uppercase letter)">
+                    <span class="error-span" id="error-span-last_name">Please enter correct data(Last name must start with an uppercase letter)</span><br>
 
                     <label for="gender">Gender:</label>
                     <select id="gender" required>
@@ -92,7 +92,7 @@
 
                     <label for="birthday">Birthday:</label>
                     <input type="date" id="birthday" required>
-                    <span class="error-span" id="error-span-date">Please select birthday date correct</span><br>
+                    <span class="error-span" id="error-span-birthday">Please select birthday date correct</span><br>
 
                     <div class="modal-buttons">
                         <button type="button" id="cancel">Cancel</button>

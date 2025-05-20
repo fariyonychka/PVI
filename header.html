@@ -4,18 +4,19 @@
         <a href="index.html"> <img src="studenticon.png" alt="STD"> </a>
         </div>
         <div class="right-icons">
-        <div class="message-icon" id="message-icon"> 
-                <!-- <a href="messages.html"> -->
+            <button id="loginButton">Log In</button>
+        
+        <div class="message-icon needs-auth" id="message-icon"> 
+                <a href="messages.html"> 
                     <img src="christmas-bell.png" alt="bell" class="bell" id="bell">
-            <!--  </a> -->
+             </a>
                 <span class="notification-dot" id="notifDot"></span>
         </div>
 
-        <button id="loginButton">Log In</button>
 
-            <div class="userInfo" id="userInfo">
+            <div class="userInfo needs-auth hidden" id="userInfo">
             <img src="usericon.png" alt="user">
-            <p>James Bond</p>
+            <p id="userLoginText">James Bond</p>
         </div>
         </div>
     </div>
@@ -29,26 +30,8 @@
     <div class="overlay" id="overlay"></div>
 
     <div class="messageMod" id="messageMod">
-        <div class="wholeMessage">
-        <div class="iconUserMessag">
-            <img src="usericon.png" alt="user">
-            <p class="nameUserMessag">Admin</p>
-        </div>
-        <div class="messageText"></div>
-    </div>
-    <div class="wholeMessage">
-        <div class="iconUserMessag">
-            <img src="usericon.png" alt="user">
-            <p class="nameUserMessag">John</p>
-        </div>
-        <div class="messageText"></div>
-    </div>
-    <div class="wholeMessage">
-        <div class="iconUserMessag">
-            <img src="usericon.png" alt="user">
-            <p class="nameUserMessag">Yustyna</p>
-        </div>
-        <div class="messageText"></div>
+        <div id="notifications">
+        <!-- Сповіщення додаються динамічно -->
     </div>
     </div>
 
@@ -56,9 +39,11 @@
         <div class="modal-content">
             <span class="close-btn" id="closeLogin">&times;</span>
             <h3>Log In</h3>
-            <input type="text" id="loginInput" placeholder="Login">
-            <input type="password" id="passwordInput" placeholder="Password">
-            <button id="confirmLogin">Sign In</button>
+            <form action="" method="post">
+            <input type="text" id="loginInput" name="login" placeholder="Login">
+            <input type="password" id="passwordInput" name="pass" placeholder="Password">
+            <button id="confirmLogin" type="submit">Sign In</button>
+        </form>
         </div>
       </div>
       

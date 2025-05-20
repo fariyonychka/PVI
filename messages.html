@@ -18,7 +18,61 @@
     <aside>
     <div id="navigation-placeholder"></div>
     </aside>
+    <div class="content-message">
+            <h1>Messages</h1>
+<div class="messages-container">
+    <div class="chat-list-panel">
+        <div class="chat-header">
+            <span>Chat room</span>
+            <button class="new-chat-btn" id="newChatBtn">+ New chat room</button>
+        </div>
+        <ul class="chat-list" id="chatList">
+            <!-- <li class="chat active"><img class="user-ic" src="usericon.png" alt="user">Admin</li>
+            <li class="chat"><img class="user-ic" src="usericon.png" alt="user">Ann Smith</li>
+            <li class="chat"><img class="user-ic" src="usericon.png" alt="user">John Bond</li>
+            <li class="chat"><img class="user-ic" src="usericon.png" alt="user">Ivon Stan</li>  
+        -->
+        </ul>
+    </div>
+
+    <div class="chat-window">
+        <div class="chat-room-header">
+            <h2 id="userChatRoomText">Chat room Admin</h2>
+            <div class="members">
+                <span>Members</span>
+                <div class="avatars" id="memberAvatars">
+                   <!-- <div class="avatar"><img class="user-ic" src="usericon.png" alt="user"></div>
+                    <div class="avatar"><img class="user-ic" src="usericon.png" alt="user"></div>
+                    <div class="avatar"><img class="user-ic" src="usericon.png" alt="user"></div>
+                    -->
+                    </div>
+                    <button class="add-member" id="addMemberBtn">+</button>
+                
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+           <!-- <div class="message received">
+                <span class="sender"><img class="user-ic" src="usericon.png" alt="user">Admin</span>
+                <div class="bubble">Привіт, це тестове повідомлення!</div>
+            </div>
+            <div class="message sent">
+                <div class="bubble">Інше повідомлення з мого боку.</div>
+                <span class="sender"><img class="user-ic" src="usericon.png" alt="user">Me</span>
+            </div>
+            -->
+        </div>
+
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type a message..." />
+            <button class="send-button" id="sendMessageBtn">▶</button>
+        </div>
+    </div>
+</div>
+
+    </div>
 </main>
+<script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
