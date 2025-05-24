@@ -33,8 +33,22 @@ async function loadHeader() {
         headerPlaceholder.innerHTML = data;
         document.dispatchEvent(new Event("headerLoaded"));
     }
-}
 
+}
+function waitForNotificationUI(callback) {
+    const check = () => {
+        if (
+            document.getElementById('bell') &&
+            document.getElementById('notifDot') &&
+            document.getElementById('messageMod')
+        ) {
+            callback();
+        } else {
+            setTimeout(check, 100); // перевіряє кожні 100мс
+        }
+    };
+    check();
+}
 document.addEventListener("headerLoaded", async function () {
     try {
         const response = await safeFetch("/PVI/server/index.php/api/user", {
@@ -60,7 +74,6 @@ document.addEventListener("headerLoaded", async function () {
             console.log("renderUserUI викликано з: null");
             renderUserUI(null);
         }
-        
     } catch (error) {
         if (error.message === "Unauthorized") {
             console.log("Користувач не авторизований — показуємо гостьовий режим");
@@ -103,6 +116,7 @@ function renderUserUI(user) {
         });
 
             fetchStudents();
+waitForNotificationUI(fetchUnreadMessages);
         
     } else {
         loginBtn?.classList.remove("hidden");
@@ -622,10 +636,593 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-if ("serviceWorker" in navigator) {
+/*if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js")
         .then(() => console.log("Service Worker зареєстровано"))
         .catch(err => console.error("Помилка реєстрації Service Worker", err));
 }
+*/
+
+
+
+let modalMode = 'create'; // або 'add'
+let selectedChatId = null;
+let existingParticipants = [];
+let activeChatId = null;
+let activeChatParticipants = [];
 
 const socket = io('http://localhost:3000');
+
+// ======= Основна логіка запуску після завантаження DOM =======
+document.addEventListener('DOMContentLoaded', () => {
+   const user = JSON.parse(localStorage.getItem('user'));
+    const studentId = user?.id;
+
+    if (studentId) {
+        socket.emit('userConnected', studentId);
+        // Приєднуємося до всіх чатів користувача
+        joinAllChatRooms(studentId);
+
+        // Завантажуємо непрочитані повідомлення
+        fetchUnreadMessages();
+
+        // Специфічна логіка для messages.html
+        if (window.location.pathname.includes('messages')) {
+            const newChatBtn = document.getElementById('newChatBtn');
+            const createChatBtn = document.getElementById('createChatBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const addMemberBtn = document.getElementById('addMemberBtn');
+
+            if (newChatBtn) newChatBtn.addEventListener('click', handleNewChatClick);
+            if (createChatBtn) createChatBtn.addEventListener('click', handleModalSubmit);
+            if (closeModalBtn) closeModalBtn.addEventListener('click', closeNewChatModal);
+            if (addMemberBtn) addMemberBtn.addEventListener('click', handleAddMembersToChat);
+
+            loadChatRooms(studentId);
+        }
+    }
+});
+
+async function joinAllChatRooms(studentId) {
+    try {
+        const res = await fetch(`http://localhost:3000/chatrooms/${studentId}`, {
+            cache: 'no-store'
+        });
+        const chatRooms = await res.json();
+        chatRooms.forEach(chat => {
+            socket.emit('joinRoom', chat.id);
+            console.log(`Приєднано до кімнати ${chat.id}`);
+        });
+    } catch (err) {
+        console.error('Помилка при завантаженні чатів для приєднання:', err);
+    }
+}
+
+socket.on('userStatusUpdate', ({ userId, status }) => {
+    console.log(`Статус користувача ${userId} змінено на ${status}`);
+    if (window.location.pathname.includes('messages') && activeChatParticipants) {
+        // Оновлюємо статус у activeChatParticipants
+        activeChatParticipants = activeChatParticipants.map((participant) => {
+            if (participant.id.toString() === userId.toString()) {
+                return { ...participant, status };
+            }
+            return participant;
+        });
+        // Оновлюємо UI
+        updateChatRoomUI();
+    }
+});
+
+function updateChatRoomUI() {
+    const avatars = document.getElementById('memberAvatars');
+if (!avatars || !activeChatParticipants) {
+        console.log('memberAvatars або activeChatParticipants відсутні');
+        return;
+    }
+    avatars.innerHTML = '';
+    activeChatParticipants.forEach((participant) => {
+        const div = document.createElement('div');
+        div.className = `avatar ${participant.status === 'active' ? 'active' : 'inactive'}`;
+        div.title = `${participant.first_name} ${participant.last_name} (${participant.status})`;
+        div.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">`;
+        avatars.appendChild(div);
+    });
+}
+
+async function handleNewChatClick() {
+  modalMode = 'create';
+  selectedChatId = null;
+  existingParticipants = [];
+
+  const modal = document.getElementById('newChatModal');
+  const studentList = document.getElementById('studentList');
+  const createBtn = document.getElementById('createChatBtn');
+
+  createBtn.textContent = "➕ Створити чат";
+
+  studentList.innerHTML = '';
+
+  try {
+    const res = await fetch('http://localhost:3000/students', { cache: 'no-store' });
+    const students = await res.json();
+
+    students.forEach(student => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <label>
+          <input type="checkbox" value="${student.id}"> 
+          ${student.first_name} ${student.last_name} — ${student.status}
+        </label>
+      `;
+      studentList.appendChild(li);
+    });
+
+    modal.classList.remove('hiddenChat');
+  } catch (err) {
+    alert('❌ Помилка при завантаженні студентів');
+    console.error(err);
+  }
+}
+
+
+async function handleCreateChat() {
+  const checkboxes = document.querySelectorAll('#studentList input:checked');
+  const participantIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+  if (participantIds.length < 2) {
+    alert('❗ Оберіть щонайменше двох учасників');
+    return;
+  }
+
+    try {
+    const res = await fetch('http://localhost:3000/chatrooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ participants: participantIds })
+    });
+
+    const data = await res.json();
+    alert(data.message || '✅ Чат створено');
+    await new Promise(r => setTimeout(r, 1000));
+    const user = JSON.parse(localStorage.getItem("user"));
+    const studentId = user?.id; 
+    await loadChatRooms(studentId);
+    console.log('Чати перезавантажено');
+    closeNewChatModal();
+    } catch (err) {
+    alert('❌ Помилка при створенні чату');
+    console.error(err);
+  } 
+
+}
+
+function closeNewChatModal() {
+  const modal = document.getElementById('newChatModal');
+  modal.classList.add('hiddenChat');
+}
+
+async function loadChatRooms(currentStudentId) {
+  try {
+    const res = await fetch(`http://localhost:3000/chatrooms/${currentStudentId}`, {
+        cache: 'no-store'
+    });
+    const chatRooms = await res.json();
+
+    const chatList = document.getElementById('chatList');
+    chatList.innerHTML = ''; // Очистити список
+    console.log("🔁 Отримані чати:", chatRooms); // <—
+
+    chatRooms.forEach(chat => {
+      const li = document.createElement('li');
+      li.className = 'chat';
+      li.dataset.chatId = chat.id;
+      li.dataset.members = JSON.stringify(chat.participants); 
+      const otherParticipants = chat.participants.filter(p => p.id !== currentStudentId);
+      const names = otherParticipants.map(p => p.first_name).join(', ');
+      const chatTitle = names ? `Chat з ${names}` : `Chat`;
+      li.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">${chatTitle}`;
+      li.addEventListener('click', async () =>await  openChatRoom(chat.id, chat.participants));
+      chatList.appendChild(li);
+    });
+
+    if (chatRooms.length > 0) {
+      // Автоматично відкриваємо перший чат
+      await openChatRoom(chatRooms[0].id, chatRooms[0].participants);
+    }
+  } catch (err) {
+    console.error('Помилка при завантаженні чатів:', err);
+  }
+}
+
+async function openChatRoom(chatId, participants) {
+  activeChatId = chatId; // <--- зберігаємо
+  activeChatParticipants = participants; // <--- зберігаємо
+  localStorage.setItem('activeChatId', chatId); // зберігаємо в локальне сховище
+  socket.emit('joinRoom', chatId);
+  const chatTitle = document.getElementById('userChatRoomText');
+  const user = JSON.parse(localStorage.getItem('user'));
+  const otherParticipants = participants.filter(p => p.id !== user.id);
+  const names = otherParticipants.map(p => p.first_name).join(', ');
+
+  chatTitle.textContent = `Chat з ${names || 'собою'}`;
+
+  const avatars = document.getElementById('memberAvatars');
+  avatars.innerHTML = '';
+
+  updateChatRoomUI();
+  loadMessages(chatId);
+
+  // Можна підсвітити активний чат у списку
+  const chats = document.querySelectorAll('.chat');
+  chats.forEach(li => {
+    li.classList.toggle('selected', li.dataset.chatId == chatId);
+  });
+try {
+  const res = await fetch(`http://localhost:3000/unread/${user.id}/${chatId}`, { method: 'DELETE' });
+  if (!res.ok) {
+    console.error("DELETE failed with status", res.status);
+  }
+} catch (e) {
+  console.error("DELETE fetch error:", e);
+}
+
+
+    document.getElementById('notifDot').style.display = 'none';
+
+}
+
+
+async function handleAddMembersToChat() {
+const activeChatId = localStorage.getItem('activeChatId'); 
+
+  if (!activeChatId || !activeChatParticipants.length) {
+    alert("❗ Спочатку виберіть чат");
+    return;
+  }
+
+  modalMode = 'add';
+  selectedChatId = activeChatId;
+  existingParticipants = activeChatParticipants.map(p => p.id);
+
+  const modal = document.getElementById('newChatModal');
+  const studentList = document.getElementById('studentList');
+  const createBtn = document.getElementById('createChatBtn');
+
+  studentList.innerHTML = '';
+
+  try {
+    const res = await fetch('http://localhost:3000/students', { cache: 'no-store' });
+    const allStudents = await res.json();
+
+    const notInChat = allStudents.filter(s => !existingParticipants.includes(s.id));
+
+    if (notInChat.length === 0) {
+      alert("✅ Всі користувачі вже є в чаті");
+      return;
+    }
+
+    notInChat.forEach(student => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <label>
+          <input type="checkbox" value="${student.id}"> 
+          ${student.first_name} ${student.last_name} — ${student.status}
+        </label>
+      `;
+      studentList.appendChild(li);
+    });
+
+    createBtn.textContent = "➕ Додати до чату";
+    modal.classList.remove('hiddenChat');
+  } catch (err) {
+    alert("❌ Помилка при завантаженні студентів");
+    console.error(err);
+  }
+}
+
+
+
+async function handleAddSelectedMembersToChat(chatId, existingIds) {
+  const checkboxes = document.querySelectorAll('#studentList input:checked');
+  const newIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+  if (newIds.length === 0) {
+    alert("❗ Оберіть хоча б одного нового учасника");
+    return;
+  }
+
+  const updatedIds = [...new Set([...existingIds, ...newIds])];
+
+  try {
+    const res = await fetch(`http://localhost:3000/chatrooms/${chatId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ participants: updatedIds })
+    });
+
+    const data = await res.json();
+    alert(data.message || "✅ Учасники додані");
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const studentId = user?.id;
+    await loadChatRooms(studentId);
+
+    closeNewChatModal();
+  } catch (err) {
+    alert("❌ Помилка при оновленні чату");
+    console.error(err);
+  }
+}
+
+async function handleModalSubmit() {
+  const checkboxes = document.querySelectorAll('#studentList input:checked');
+  const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+  if (modalMode === 'create') {
+    if (selectedIds.length < 2) {
+      alert('❗ Оберіть щонайменше двох учасників');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/chatrooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ participants: selectedIds })
+      });
+
+      const data = await res.json();
+      alert(data.message || '✅ Чат створено');
+    } catch (err) {
+      alert('❌ Помилка при створенні чату');
+      console.error(err);
+    }
+
+  } else if (modalMode === 'add') {
+    if (selectedIds.length === 0) {
+      alert("❗ Оберіть хоча б одного нового учасника");
+      return;
+    }
+
+    const updatedIds = [...new Set([...existingParticipants, ...selectedIds])];
+
+    try {
+      const res = await fetch(`http://localhost:3000/chatrooms/${selectedChatId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ participants: updatedIds })
+      });
+
+      const data = await res.json();
+      alert(data.message || "✅ Учасники додані");
+    } catch (err) {
+      alert("❌ Помилка при оновленні чату");
+      console.error(err);
+    }
+  }
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const studentId = user?.id;
+  await loadChatRooms(studentId);
+  closeNewChatModal();
+}
+
+async function loadMessages(chatRoomId) {
+  const container = document.getElementById('chatMessages');
+  container.innerHTML = '';
+
+  try {
+    const res = await fetch(`http://localhost:3000/messages/${chatRoomId}`, {
+      cache: 'no-store'
+    });
+    const messages = await res.json();
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    messages.forEach(msg => {
+      const div = document.createElement('div');
+      div.className = 'message ' + (msg.authorId === user.id ? 'sent' : 'received');
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = msg.text;
+
+      const sender = document.createElement('span');
+      sender.className = 'sender';
+      sender.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">${msg.authorName}`;
+
+      if (msg.authorId === user.id) {
+        div.appendChild(bubble);
+        div.appendChild(sender);
+      } else {
+        div.appendChild(sender);
+        div.appendChild(bubble);
+      }
+
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    console.error("❌ Помилка при завантаженні повідомлень:", err);
+  }
+}
+
+socket.on('newMessage', (message) => {
+    console.log('Нове повідомлення:', message);
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    console.log('Поточний користувач:', user);
+
+    const activeChatId = localStorage.getItem('activeChatId');
+    console.log('activeChatId:', activeChatId);
+
+    // Якщо повідомлення від поточного користувача
+    if (message.authorId === user.id) {
+        console.log('Повідомлення від себе — рендерю');
+        if (window.location.pathname.includes('messages') && message.chatRoomId === activeChatId) {
+            renderMessage(message);
+        }
+        return;
+    }
+
+    // Якщо користувач у потрібному чаті на messages.html
+    if (
+        window.location.pathname.includes('messages') &&
+        message.chatRoomId === activeChatId
+    ) {
+        console.log('Відображення повідомлення у відкритому чаті');
+        renderMessage(message);
+        // Очищаємо непрочитані для цього чату
+        fetch(`http://localhost:3000/unread/${user.id}/${message.chatRoomId}`, { method: 'DELETE' })
+            .catch(err => console.error('Помилка при видаленні непрочитаних:', err));
+        return;
+    }
+
+    // Показуємо сповіщення на всіх сторінках
+    console.log('Показ сповіщення дзвіночком');
+    waitForNotificationUI(() => showNotification(message));
+    if (message.authorId !== user.id) {
+        fetchUnreadMessages();
+    }
+});
+
+document.getElementById('sendMessageBtn').addEventListener('click', () => {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  const activeChatId = localStorage.getItem('activeChatId'); 
+  if (!text || !activeChatId) return;
+
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  const messageData = {
+    chatRoomId: activeChatId,
+    authorId: user.id,
+    authorName: `${user.login}`,
+    text: text
+  };
+
+  socket.emit('sendMessage', messageData);
+  input.value = '';
+});
+
+function renderMessage(message) {
+  const messagesContainer = document.getElementById('chatMessages');
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  const isOwnMessage = message.authorId === user.id;
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${isOwnMessage ? 'sent' : 'received'}`;
+
+  const senderSpan = document.createElement('span');
+  senderSpan.className = 'sender';
+  senderSpan.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">${message.authorName}`;
+
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = 'bubble';
+  bubbleDiv.textContent = message.text;
+
+  if (isOwnMessage) {
+    messageDiv.appendChild(bubbleDiv);
+    messageDiv.appendChild(senderSpan);
+  } else {
+    messageDiv.appendChild(senderSpan);
+    messageDiv.appendChild(bubbleDiv);
+  }
+
+  messagesContainer.appendChild(messageDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight; // автоскрол до низу
+}
+
+function showNotification(message) {
+    const notifDot = document.getElementById('notifDot');
+    const bell = document.getElementById('bell');
+    const messageMod = document.getElementById('messageMod');
+
+    if (bell) bell.classList.add("shake"); 
+    if (notifDot) notifDot.style.display = "block";
+
+        setTimeout(() => {
+            bell.classList.remove("shake");
+            if (notifDot) notifDot.style.display = "block";
+        }, 500);
+
+  const newMsg = document.createElement('div');
+  newMsg.className = 'wholeMessage';
+  newMsg.innerHTML = `
+    <div class="iconUserMessag">
+        <img src="usericon.png" alt="user">
+        <p class="nameUserMessag">${message.authorName}</p>
+    </div>
+    <div class="messageText">${message.text}</div>
+  `;
+
+  newMsg.addEventListener('click', () => {
+    // Зберігаємо chatId у локальне сховище
+    localStorage.setItem('redirectToChatId', message.chatRoomId);
+    window.location.href = 'messages.html';
+  });
+
+  messageMod.prepend(newMsg);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const redirectChatId = localStorage.getItem('redirectToChatId');
+    if (redirectChatId) {
+        localStorage.removeItem('redirectToChatId');
+        setTimeout(async () => {
+            const target = document.querySelector(`.chat[data-chat-id="${redirectChatId}"]`);
+            if (target) {
+                target.click();
+                const user = JSON.parse(localStorage.getItem('user'));
+                await fetch(`http://localhost:3000/unread/${user.id}/${redirectChatId}`, { method: 'DELETE' });
+                document.getElementById('notifDot').style.display = 'none';
+            }
+        }, 500);
+    }
+});
+
+async function fetchUnreadMessages() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) return;
+
+  const res = await fetch(`http://localhost:3000/unread/${user.id}`);
+  const messages = await res.json();
+
+  if (messages.length) {
+    const bell = document.getElementById('bell');
+    const notifDot = document.getElementById('notifDot');
+    const messageMod = document.getElementById('messageMod');
+
+    bell?.classList.add("shake");
+    notifDot.style.display = "block";
+
+    messageMod.innerHTML = ''; // Очистити перед оновленням
+
+    messages.forEach((msg) => {
+      const div = document.createElement('div');
+      div.className = 'wholeMessage';
+      div.innerHTML = `
+        <div class="iconUserMessag">
+            <img src="usericon.png" alt="user">
+            <p class="nameUserMessag">${msg.authorName}</p>
+        </div>
+        <div class="messageText">${msg.text}</div>
+      `;
+
+      div.addEventListener('click', () => {
+        localStorage.setItem('redirectToChatId', msg.chatRoomId);
+        window.location.href = 'messages.html';
+      });
+
+      messageMod.appendChild(div);
+    });
+  }
+}
+
+window.addEventListener('beforeunload', () => {
+  localStorage.removeItem('activeChatId');
+});

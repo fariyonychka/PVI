@@ -16,8 +16,19 @@ class Auth {
         if ($user && $user['pass'] === $password) {
             $_SESSION['user'] = [
                 'id' => $user['id'],
-                'login' => $user['login']
+                'login' => $user['login'],
+                'birth_year' => $user['pass']
             ];
+             $updateStmt = $pdo->prepare("
+            UPDATE students 
+            SET status = 'active' 
+            WHERE first_name = :name 
+              AND YEAR(birthday) = :year
+        ");
+        $updateStmt->execute([
+            'name' => $user['login'],
+            'year' => $user['pass']
+        ]);
             return ["success" => true, "user" => $_SESSION['user']];
         }
         

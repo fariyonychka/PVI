@@ -50,13 +50,14 @@ gap: 5px;
 
 .notification-dot {
     position: absolute;
-    top: 18px;
-    right: 140px;
-    width: 10px;
-    height: 10px;
-    background-color: rgb(11, 195, 106);
-    border-radius: 50%;
-    display: none;
+    top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background-color: rgb(11, 195, 106);
+  border-radius: 50%;
+  display: none; /* Можна змінювати на block при потребі */
+  z-index: 1;
 }
 
 .message-icon {
@@ -70,7 +71,10 @@ gap: 5px;
 .shake {
     animation: shakeBell 0.5s ease-in-out;
 }
-
+.bell-wrapper {
+  position: relative; 
+  display: inline-block;
+}
 .useraccount{
     width: 120px;
     position: absolute;

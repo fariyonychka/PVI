@@ -321,10 +321,10 @@ main {
 .avatar {
     width: 30px;
     height: 30px;
-    background-color: #ddd;
-    border-radius: 50%;
+    position: relative;
+    display: inline-block;
+    margin-right: 10px;
 }
-
 .add-member {
     padding: 5px 10px;
     cursor: pointer;
@@ -332,7 +332,32 @@ main {
     border: none;
     border-radius: 5px;
 }
+.avatar.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    background-color: green;
+    border-radius: 50%;
+    border: 1px solid white;
+    z-index: 10;
+}
 
+.avatar.inactive::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    background-color: gray;
+    border-radius: 50%;
+    border: 1px solid white;
+        z-index: 10;
+
+}
 .chat-messages {
     flex-grow: 1;
     display: flex;
@@ -396,6 +421,34 @@ width: 850px;
     color: white;
     border-radius: 5px;
     cursor: pointer;
+}
+
+.modalChat.hiddenChat {
+  display: none;
+}
+.modalChat {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; justify-content: center; align-items: center;
+}
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+#studentList {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 10px 0;
+}
+#studentList li {
+  margin-bottom: 5px;
+}
+.chat.selected {
+  background-color: #dceaff; 
+  border-left: 4px solid #3399ff; 
+  font-weight: bold;
 }
 
 
