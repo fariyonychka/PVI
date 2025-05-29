@@ -15,6 +15,25 @@ class AuthController {
     
 
     public static function logout() {
+
+        global $pdo;
+        if (isset($_SESSION['user'])) {
+        $login = $_SESSION['user']['login'];
+        $year = $_SESSION['user']['birth_year'];
+
+        // Оновити статус студента на 'inactive'
+        $updateStmt = $pdo->prepare("
+            UPDATE students 
+            SET status = 'inactive' 
+            WHERE first_name = :name 
+              AND YEAR(birthday) = :year
+        ");
+        $updateStmt->execute([
+            'name' => $login,
+            'year' => $year
+        ]);
+    }
+
     session_unset();
 
     if (ini_get("session.use_cookies")) {

@@ -1,5 +1,31 @@
 loadHeader();
 loadNav();
+
+    let editedRow = null;
+    const addNewBtn = document.querySelector(".addnew img");
+    const modal = document.getElementById("modal");
+    const overlay = document.getElementById("overlay");
+    const cancelBtn = document.getElementById("cancel");
+    const createBtn = document.getElementById("create");
+    const warningModal = document.getElementById("warningModal");
+    const groupInput = document.getElementById("student_group");
+    const firstNameInput = document.getElementById("first_name");
+    const lastNameInput = document.getElementById("last_name");
+    const genderInput = document.getElementById("gender");
+    const birthdayInput = document.getElementById("birthday"); 
+    const cancelWarMod = document.getElementById("cancelWarMod");
+    const okWarMod = document.getElementById("okWarMod");
+    const selectAllCheckbox = document.querySelector("th input[type='checkbox']");
+    const studentTable = document.getElementById("studentTable");
+    const validationTypeElement = document.getElementById("validationType");
+    const useJSValidation = validationTypeElement ? validationTypeElement.value === "js" : false;
+        if (useJSValidation) {
+        document.getElementById("studentForm").setAttribute("novalidate", "true");
+    }
+    const rowsPerPage = 5; 
+    let currentPage = 1;
+
+
 async function loadHeader() {
     let response = await fetch("./header.html");
     let data = await response.text();
@@ -9,6 +35,22 @@ async function loadHeader() {
         headerPlaceholder.innerHTML = data;
         document.dispatchEvent(new Event("headerLoaded"));
     }
+
+
+}
+function waitForNotificationUI(callback) {
+    const check = () => {
+        if (
+            document.getElementById('bell') &&
+            document.getElementById('notifDot') &&
+            document.getElementById('messageMod')
+        ) {
+            callback();
+        } else {
+            setTimeout(check, 100); // перевіряє кожні 100мс
+        }
+    };
+    check();
 }
 
 document.addEventListener("headerLoaded", async function () {
@@ -33,10 +75,11 @@ document.addEventListener("headerLoaded", async function () {
             renderUserUI(user);
         } else {
             localStorage.removeItem("user");
-            console.log("🔧 renderUserUI викликано з: null");
+
+            console.log("renderUserUI викликано з: null");
             renderUserUI(null);
         }
-        
+
     } catch (error) {
         if (error.message === "Unauthorized") {
             console.log("Користувач не авторизований — показуємо гостьовий режим");
@@ -65,9 +108,15 @@ function renderUserUI(user) {
         logoutBtn?.classList.remove("hidden");
         userInfoBlock?.classList.remove("hidden");
         const userLoginText = document.getElementById("userLoginText");
+
+        const userChatRoomText=document.getElementById("userChatRoomText");
         if (userLoginText) {
             userLoginText.textContent = user.login;
         }
+        if (userChatRoomText) {
+            userChatRoomText.textContent = "Chat Room "+ user.login;
+        }
+
         protectedElements.forEach(el => {
             el.classList.remove("disabled-link");
             el.style.pointerEvents = "auto";
@@ -75,6 +124,9 @@ function renderUserUI(user) {
         });
 
             fetchStudents();
+
+waitForNotificationUI(fetchUnreadMessages);
+
         
     } else {
         loginBtn?.classList.remove("hidden");
@@ -180,6 +232,7 @@ function attachHeaderEvents() {
 }
 
 
+
 async function safeFetch(url, options = {}, config = {}) {
     const { silent401 = false } = config;
 
@@ -202,12 +255,72 @@ async function safeFetch(url, options = {}, config = {}) {
         throw error;
     }
 }
+function attachEditEvent(button) {
+    button.addEventListener("click", function () {
+        editedRow = this.closest("tr"); 
+        const cells = editedRow.getElementsByTagName("td");
+        
+        resetValidation();
+
+        groupInput.value = cells[2].textContent;
+
+        const nameParts = cells[3].textContent.split(" ");
+        firstNameInput.value = nameParts[0] || "";
+        lastNameInput.value = nameParts[1] || "";
+
+        genderInput.value = cells[4].textContent;
+
+        const dateParts = cells[5].textContent.split(".");
+        if (dateParts.length === 3) {
+            birthdayInput.value = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+        } else {
+            birthdayInput.value = cells[5].textContent;
+        }
+
+        const id = cells[1].textContent.trim();
+        editedRow.dataset.id = id;
+
+        document.getElementById("h2Text").textContent = "Edit Student";
+        createBtn.textContent = "Save";
+        modal.classList.add("active");
+        overlay.classList.add("active");
+    });
+}
+function attachDeleteStudentEvent(button) {
+    button.addEventListener("click", function () {
+        const allCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");
+        const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
+        
+        if (checkedCheckboxes.length === allCheckboxes.length && checkedCheckboxes.length > 0) {
+            document.getElementById("textWarning").textContent = `Are you sure you want to delete all students?`;
+        } else {
+            editedRow = this.closest("tr");
+            const nameParts = editedRow.getElementsByTagName("td")[2].textContent;
+            document.getElementById("textWarning").textContent = `Are you sure you want to delete user ${nameParts}?`;
+        }
+        
+        warningModal.classList.add("active");
+        overlay.classList.add("active");
+    });
+}
+
+function resetValidation() {
+    document.querySelectorAll(".error-span").forEach(span => {
+        span.style.visibility = "hidden";
+    });
+    document.querySelectorAll("input").forEach(input => {
+        input.classList.remove("invalid");
+    });
+}
+
+
 
 async function fetchStudents() {
     try {
         const response = await fetch('/PVI/server/index.php/api/students');
         const students = await response.json();
         renderStudentsTable(students);
+        paginateTable();
     } catch (error) {
         console.error("Помилка при завантаженні студентів:", error);
     }
@@ -220,7 +333,8 @@ function renderStudentsTable(students) {
     students.forEach(student => {
         const row = document.createElement("tr");
         row.innerHTML = `
-        <td><input type="checkbox"></td>
+<td><input type="checkbox" aria-label="Select all students"></td>
+            <td style="display:none;" class="studentId">${student.id}</td>
             <td>${student.student_group}</td>
             <td>${student.first_name} ${student.last_name}</td>
             <td>${student.gender}</td>
@@ -238,9 +352,152 @@ function renderStudentsTable(students) {
             </td>
         `;
         tableBody.appendChild(row);
-    });
+        const editBtn = row.querySelector(".editbutton img[alt='edit']");
+const deleteBtn = row.querySelector(".editbutton img[alt='delete']");
+if (editBtn && deleteBtn) {
+    attachEditEvent(editBtn);
+    attachDeleteStudentEvent(deleteBtn);
 }
-document.addEventListener("dblclick", function (event) {
+    });
+
+
+        return data;
+    } catch (error) {
+        if (silent401 && error.status === 401) {
+        } else {
+            console.error("Fetch error:", error.message);
+        }
+        throw error;
+    }
+}
+
+
+function showFormErrors(errors, prefix = "") {
+    for (const field in errors) {
+        console.log("Перевірка поля:", field); 
+        const errorSpan = document.getElementById(`error-span-${prefix}${field}`);
+        if (errorSpan) {
+            errorSpan.textContent = errors[field];
+            errorSpan.style.visibility = "visible";
+        } else {
+            console.warn(`Не знайдено span для помилки: error-span-${prefix}${field}`);
+        }
+    }
+}
+
+
+
+
+
+async function submitAddForm(data) {
+    console.log("Дані, що надсилаються:", data); 
+    const res = await fetch('/PVI/server/index.php/api/students', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    console.log("Відповідь сервера:", result);
+    if (result.success) {
+        await fetchStudents();
+        modal.classList.remove("active");
+        overlay.classList.remove("active");
+        document.getElementById("studentForm").reset();
+    } else {
+        showFormErrors(result.errors);
+    }
+}
+
+async function submitEditForm(id, data) {
+    const res = await fetch(`/PVI/server/index.php/api/students?id=${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    console.log("Відповідь сервера:", result);
+    if (result.success) {
+        await fetchStudents();
+        modal.classList.remove("active");
+        overlay.classList.remove("active");
+        document.getElementById("studentForm").reset();
+    } else {
+        showFormErrors(result.errors);
+    }
+}
+
+async function deleteStudent(id) {
+    const res = await fetch(`/PVI/server/index.php/api/students?id=${id}`, {
+        method: 'DELETE'
+    });
+    const result = await res.json();
+    if (result.success) {
+        await fetchStudents();
+    } else {
+        alert(result.error || 'Не вдалося видалити студента');
+    }
+}
+
+function paginateTable() {
+    const table = document.getElementById("studentTable");
+    const rows = Array.from(table.querySelectorAll("tr"));
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+    rows.forEach(row => (row.style.display = "none"));
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const rowsToShow = rows.slice(start, end);
+    rowsToShow.forEach(row => (row.style.display = ""));
+
+    const paginationContainer = document.querySelector(".pagination");
+    paginationContainer.innerHTML = "";
+
+    const prevButton = document.createElement("button");
+    prevButton.innerHTML = "&lt;";
+    prevButton.disabled = currentPage === 1;
+    prevButton.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            paginateTable();
+        }
+    });
+    paginationContainer.appendChild(prevButton);
+
+    for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement("button");
+        pageButton.textContent = i;
+        if (i === currentPage) {
+            pageButton.classList.add("active");
+        }
+        pageButton.addEventListener("click", () => {
+            currentPage = i;
+            paginateTable();
+        });
+        paginationContainer.appendChild(pageButton);
+    }
+
+    const nextButton = document.createElement("button");
+    nextButton.innerHTML = "&gt;";
+    nextButton.disabled = currentPage === totalPages;
+    nextButton.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            paginateTable();
+        }
+    });
+    paginationContainer.appendChild(nextButton);
+}
+document.addEventListener("DOMContentLoaded", paginateTable);
+
+
+function renderStudentsTable(students) {
+    const tableBody = document.getElementById("studentTable");
+    tableBody.innerHTML = ""; 
+
+
+/*document.addEventListener("dblclick", function (event) {
+
     if (event.target.closest("#message-icon")) {
         let bell = document.getElementById("bell");
         let notifDot = document.getElementById("notifDot");
@@ -255,7 +512,7 @@ document.addEventListener("dblclick", function (event) {
     }
 });
 
-
+*/
 async function loadNav(params) {
     let response=await fetch("./navigation.html");
     let data = await response.text();
@@ -274,30 +531,9 @@ function highlightActivePage() {
     }
 }
 
-let editedRow = null;
+
 document.addEventListener("DOMContentLoaded", function () {
     
-    const addNewBtn = document.querySelector(".addnew img");
-    const modal = document.getElementById("modal");
-    const overlay = document.getElementById("overlay");
-    const cancelBtn = document.getElementById("cancel");
-    const createBtn = document.getElementById("create");
-    const warningModal = document.getElementById("warningModal");
-    const groupInput = document.getElementById("group");
-    const firstNameInput = document.getElementById("firstName");
-    const lastNameInput = document.getElementById("lastName");
-    const genderInput = document.getElementById("gender");
-    const birthdayInput = document.getElementById("birthday"); 
-    const cancelWarMod = document.getElementById("cancelWarMod");
-    const okWarMod = document.getElementById("okWarMod");
-    const selectAllCheckbox = document.querySelector("th input[type='checkbox']");
-    const studentTable = document.getElementById("studentTable");
-    const validationTypeElement = document.getElementById("validationType");
-    const useJSValidation = validationTypeElement ? validationTypeElement.value === "js" : false;
-        if (useJSValidation) {
-        document.getElementById("studentForm").setAttribute("novalidate", "true");
-    }
-
 
     document.querySelectorAll(".closeMod").forEach((btn) => {
         btn.addEventListener("click", function () {
@@ -306,102 +542,32 @@ document.addEventListener("DOMContentLoaded", function () {
             overlay.classList.remove("active");
         });
     });
-
-    function resetValidation() {
-        document.querySelectorAll(".error-span").forEach(span => {
-            span.style.visibility = "hidden";
-        });
-        document.querySelectorAll("input").forEach(input => {
-            input.classList.remove("invalid");
-        });
-    }
-    function attachEditEvent(button) {
-        button.addEventListener("click", function () {
-            editedRow = this.closest("tr"); 
-            const cells = editedRow.getElementsByTagName("td");
-            
-            resetValidation();
-
-            groupInput.value = cells[1].textContent;
-            const nameParts = cells[2].textContent.split(" ");
-            firstNameInput.value = nameParts[0] || "";
-            lastNameInput.value = nameParts[1] || "";
-            genderInput.value = cells[3].textContent;
-
-            const dateParts = cells[4].textContent.split(".");
-            if (dateParts.length === 3) {
-                birthdayInput.value = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-            } else {
-                birthdayInput.value = cells[4].textContent;
-            }
-
-            document.getElementById("h2Text").textContent = "Edit Student";
-            createBtn.textContent = "Save";
-            modal.classList.add("active");
-            overlay.classList.add("active");
-            
-        });
-    }
-    function attachDeleteStudentEvent(button) {
-        button.addEventListener("click", function () {
-            const allCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']");
-            const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
-            
-            if (checkedCheckboxes.length === allCheckboxes.length && checkedCheckboxes.length > 0) {
-                document.getElementById("textWarning").textContent = `Are you sure you want to delete all students?`;
-            } else {
-                editedRow = this.closest("tr");
-                const nameParts = editedRow.getElementsByTagName("td")[2].textContent;
-                document.getElementById("textWarning").textContent = `Are you sure you want to delete user ${nameParts}?`;
-            }
-            
-            warningModal.classList.add("active");
-            overlay.classList.add("active");
-        });
-    }
     document.querySelectorAll(".editbutton img[alt='edit']").forEach(attachEditEvent);
     document.querySelectorAll(".editbutton img[alt='delete']").forEach(attachDeleteStudentEvent);
 
     document.getElementById("studentForm")?.addEventListener("submit", function (event) {
-        if (useJSValidation) {
-            event.preventDefault(); 
-            if (!validateStudent({
-                group: groupInput.value.trim(),
-                firstName: firstNameInput.value.trim(),
-                lastName: lastNameInput.value.trim(),
-                gender: genderInput.value,
-                birthday: birthdayInput.value
-            })) {
-                return; 
-            }
-        } else {
-            event.preventDefault(); 
-        }
-    
+        event.preventDefault();
         const student = {
-            group: groupInput.value.trim(),
-            firstName: firstNameInput.value.trim(),
-            lastName: lastNameInput.value.trim(),
+            student_group: groupInput.value.trim(),
+            first_name: firstNameInput.value.trim(),
+            last_name: lastNameInput.value.trim(),
             gender: genderInput.value,
-            birthday: birthdayInput.value
+            birthday: birthdayInput.value,
+            status: 'inactive'           
         };
     
         if (createBtn.textContent === "Create") {
-            addStudentToTable(student);
+            submitAddForm(student); 
         } else if (createBtn.textContent === "Save" && editedRow) {
-            const cells = editedRow.getElementsByTagName("td");
-            cells[1].textContent = student.group;
-            cells[2].textContent = `${student.firstName} ${student.lastName}`;
-            cells[3].textContent = student.gender;
-            cells[4].textContent = student.birthday;
-            console.log("Updated Student:", JSON.stringify(student, null, 2));
-
+            const updatedStudent = {
+                ...student,
+                id: editedRow.querySelector(".studentId").textContent.trim()
+            };
+            submitEditForm(updatedStudent.id, updatedStudent); 
         }
     
-        modal.classList.remove("active");
-        overlay.classList.remove("active");
+        
     
-        document.getElementById("studentForm").reset();
     });
     
     
@@ -440,86 +606,16 @@ document.addEventListener("DOMContentLoaded", function () {
     okWarMod?.addEventListener("click", function () {
         const checkedCheckboxes = studentTable.querySelectorAll("tr td input[type='checkbox']:checked");
     
-        if (checkedCheckboxes.length > 0) {
-            checkedCheckboxes.forEach(checkbox => checkbox.closest("tr").remove());
-        } else if (editedRow) {
-            editedRow.remove();
-            editedRow = null;
-        }
+        checkedCheckboxes.forEach(async checkbox => {
+            const row = checkbox.closest("tr");
+            const id = row.querySelector(".studentId")?.textContent?.trim();
+            if (id) await deleteStudent(id);
+        });
     
         warningModal.classList.remove("active");
         overlay.classList.remove("active");
     });
 
-    function validateStudent(student) {
-        let isValid = true;
-    
-        document.querySelectorAll(".error-span").forEach(span => span.style.visibility = "hidden");
-        document.querySelectorAll("input").forEach(input => input.classList.remove("invalid"));
-    
-        let groupInput = document.getElementById("group");
-        let firstNameInput = document.getElementById("firstName");
-        let lastNameInput = document.getElementById("lastName");
-        let genderInput = document.getElementById("gender");
-        let birthdayInput = document.getElementById("birthday");
-    
-        if (typeof useJSValidation !== "undefined" && !useJSValidation) {
-            return true; 
-        }
-    
-        const groupPattern = /^[A-Z]{2}-\d{2}$/;
-        if (!groupPattern.test(student.group)) {
-            document.getElementById("error-span-group").style.visibility = "visible";
-            groupInput.classList.add("invalid");
-            isValid = false;
-        }
-    
-        const namePattern = /^[A-Z][a-z]+([-'’][A-Z]?[a-z]+)*$/;
-        if (!namePattern.test(student.firstName)) {
-            document.getElementById("error-span-name").style.visibility = "visible";
-            firstNameInput.classList.add("invalid");
-            isValid = false;
-        } 
-    
-        if (!namePattern.test(student.lastName)) {
-            document.getElementById("error-span-surname").style.visibility = "visible";
-            lastNameInput.classList.add("invalid");
-            isValid = false;
-        }
-    
-        if (!student.gender) {
-            document.getElementById("error-span-gender").style.visibility = "visible";
-            genderInput.classList.add("invalid");
-            isValid = false;
-        }
-    
-        const today = new Date();
-        const minAge = 16; 
-        const maxAge = 100; 
-        const birthday = new Date(student.birthday);
-    
-        if (!student.birthday || isNaN(birthday.getTime())) {
-            document.getElementById("error-span-date").style.visibility = "visible";
-            birthdayInput.classList.add("invalid");
-            isValid = false;
-        } else {
-            let age = today.getFullYear() - birthday.getFullYear();
-            let monthDiff = today.getMonth() - birthday.getMonth();
-            let dayDiff = today.getDate() - birthday.getDate();
-    
-            if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-                age--; 
-            }
-    
-            if (age < minAge || age > maxAge) {
-                document.getElementById("error-span-date").style.visibility = "visible";
-                birthdayInput.classList.add("invalid");
-                isValid = false;
-            }
-        }
-    
-        return isValid;
-    }
     
     function addStudentToTable(student) {
         const table = document.getElementById("studentTable");
@@ -527,8 +623,9 @@ document.addEventListener("DOMContentLoaded", function () {
     
         row.innerHTML = `
             <td><input type="checkbox"></td>
-            <td>${student.group}</td>
-            <td>${student.firstName} ${student.lastName}</td>
+            <td style="display:none;" class="studentId">0</td>
+            <td>${student.student_group}</td>
+            <td>${student.first_name} ${student.last_name}</td>
             <td>${student.gender}</td>
             <td>${student.birthday}</td>
             <td>
@@ -567,8 +664,583 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-if ("serviceWorker" in navigator) {
+
+/*if ("serviceWorker" in navigator) {
+
     navigator.serviceWorker.register("./sw.js")
         .then(() => console.log("Service Worker зареєстровано"))
         .catch(err => console.error("Помилка реєстрації Service Worker", err));
 }
+*/
+
+
+
+let modalMode = 'create'; 
+let selectedChatId = null;
+let existingParticipants = [];
+let activeChatId = null;
+let activeChatParticipants = [];
+
+const socket = io('http://localhost:3000');
+
+document.addEventListener('DOMContentLoaded', () => {
+   const user = JSON.parse(localStorage.getItem('user'));
+    const studentId = user?.id;
+
+    if (studentId) {
+        socket.emit('userConnected', studentId);
+        joinAllChatRooms(studentId);
+
+        fetchUnreadMessages();
+
+        if (window.location.pathname.includes('messages')) {
+            const newChatBtn = document.getElementById('newChatBtn');
+            const createChatBtn = document.getElementById('createChatBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const addMemberBtn = document.getElementById('addMemberBtn');
+
+            if (newChatBtn) newChatBtn.addEventListener('click', handleNewChatClick);
+            if (createChatBtn) createChatBtn.addEventListener('click', handleModalSubmit);
+            if (closeModalBtn) closeModalBtn.addEventListener('click', closeNewChatModal);
+            if (addMemberBtn) addMemberBtn.addEventListener('click', handleAddMembersToChat);
+
+            loadChatRooms(studentId);
+        }
+    }
+});
+
+async function joinAllChatRooms(studentId) {
+    try {
+        const res = await fetch(`http://localhost:3000/chatrooms/${studentId}`, {
+            cache: 'no-store'
+        });
+        const chatRooms = await res.json();
+        chatRooms.forEach(chat => {
+            socket.emit('joinRoom', chat.id);
+            console.log(`Приєднано до кімнати ${chat.id}`);
+        });
+    } catch (err) {
+        console.error('Помилка при завантаженні чатів для приєднання:', err);
+    }
+}
+
+socket.on('userStatusUpdate', ({ userId, status }) => {
+    console.log(`Статус користувача ${userId} змінено на ${status}`);
+    if (window.location.pathname.includes('messages') && activeChatParticipants) {
+        // Оновлюємо статус у activeChatParticipants
+        activeChatParticipants = activeChatParticipants.map((participant) => {
+            if (participant.id.toString() === userId.toString()) {
+                return { ...participant, status };
+            }
+            return participant;
+        });
+        updateChatRoomUI();
+    }
+});
+
+function updateChatRoomUI() {
+    const avatars = document.getElementById('memberAvatars');
+if (!avatars || !activeChatParticipants) {
+        console.log('memberAvatars або activeChatParticipants відсутні');
+        return;
+    }
+    avatars.innerHTML = '';
+    activeChatParticipants.forEach((participant) => {
+        const div = document.createElement('div');
+        div.className = `avatar ${participant.status === 'active' ? 'active' : 'inactive'}`;
+        div.title = `${participant.first_name} ${participant.last_name} (${participant.status})`;
+        div.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">`;
+        avatars.appendChild(div);
+    });
+}
+
+async function handleNewChatClick() {
+  modalMode = 'create';
+  selectedChatId = null;
+  existingParticipants = [];
+
+  const modal = document.getElementById('newChatModal');
+  const studentList = document.getElementById('studentList');
+  const createBtn = document.getElementById('createChatBtn');
+
+  createBtn.textContent = "➕ Створити чат";
+
+  studentList.innerHTML = '';
+
+  try {
+    const res = await fetch('http://localhost:3000/students', { cache: 'no-store' });
+    const students = await res.json();
+
+    students.forEach(student => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <label>
+          <input type="checkbox" value="${student.id}"> 
+          ${student.first_name} ${student.last_name} — ${student.status}
+        </label>
+      `;
+      studentList.appendChild(li);
+    });
+
+    modal.classList.remove('hiddenChat');
+  } catch (err) {
+    alert('❌ Помилка при завантаженні студентів');
+    console.error(err);
+  }
+}
+
+
+async function handleCreateChat() {
+  const checkboxes = document.querySelectorAll('#studentList input:checked');
+  const participantIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+  if (participantIds.length < 2) {
+    alert('❗ Оберіть щонайменше двох учасників');
+    return;
+  }
+
+    try {
+    const res = await fetch('http://localhost:3000/chatrooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ participants: participantIds })
+    });
+
+    const data = await res.json();
+    alert(data.message || '✅ Чат створено');
+    await new Promise(r => setTimeout(r, 1000));
+    const user = JSON.parse(localStorage.getItem("user"));
+    const studentId = user?.id; 
+    await loadChatRooms(studentId);
+    console.log('Чати перезавантажено');
+    closeNewChatModal();
+    } catch (err) {
+    alert('❌ Помилка при створенні чату');
+    console.error(err);
+  } 
+
+}
+
+function closeNewChatModal() {
+  const modal = document.getElementById('newChatModal');
+  modal.classList.add('hiddenChat');
+}
+
+async function loadChatRooms(currentStudentId) {
+  try {
+    const res = await fetch(`http://localhost:3000/chatrooms/${currentStudentId}`, {
+        cache: 'no-store'
+    });
+    const chatRooms = await res.json();
+
+    const chatList = document.getElementById('chatList');
+    chatList.innerHTML = ''; 
+    console.log("🔁 Отримані чати:", chatRooms); 
+
+    chatRooms.forEach(chat => {
+      const li = document.createElement('li');
+      li.className = 'chat';
+      li.dataset.chatId = chat.id;
+      li.dataset.members = JSON.stringify(chat.participants); 
+      const otherParticipants = chat.participants.filter(p => p.id !== currentStudentId);
+      const names = otherParticipants.map(p => p.first_name).join(', ');
+      const chatTitle = names ? `Chat з ${names}` : `Chat`;
+      li.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">${chatTitle}`;
+      li.addEventListener('click', async () =>await  openChatRoom(chat.id, chat.participants));
+      chatList.appendChild(li);
+    });
+
+    if (chatRooms.length > 0) {
+      await openChatRoom(chatRooms[0].id, chatRooms[0].participants);
+    }
+  } catch (err) {
+    console.error('Помилка при завантаженні чатів:', err);
+  }
+}
+
+async function openChatRoom(chatId, participants) {
+  activeChatId = chatId; 
+  activeChatParticipants = participants; 
+  localStorage.setItem('activeChatId', chatId); 
+  socket.emit('joinRoom', chatId);
+  const chatTitle = document.getElementById('userChatRoomText');
+  const user = JSON.parse(localStorage.getItem('user'));
+  const otherParticipants = participants.filter(p => p.id !== user.id);
+  const names = otherParticipants.map(p => p.first_name).join(', ');
+
+  chatTitle.textContent = `Chat з ${names || 'собою'}`;
+
+  const avatars = document.getElementById('memberAvatars');
+  avatars.innerHTML = '';
+
+  updateChatRoomUI();
+  loadMessages(chatId);
+
+  const chats = document.querySelectorAll('.chat');
+  chats.forEach(li => {
+    li.classList.toggle('selected', li.dataset.chatId == chatId);
+  });
+try {
+  const res = await fetch(`http://localhost:3000/unread/${user.id}/${chatId}`, { method: 'DELETE' });
+  if (!res.ok) {
+    console.error("DELETE failed with status", res.status);
+  }
+} catch (e) {
+  console.error("DELETE fetch error:", e);
+}
+
+
+    document.getElementById('notifDot').style.display = 'none';
+
+}
+
+
+async function handleAddMembersToChat() {
+const activeChatId = localStorage.getItem('activeChatId'); 
+
+  if (!activeChatId || !activeChatParticipants.length) {
+    alert("❗ Спочатку виберіть чат");
+    return;
+  }
+
+  modalMode = 'add';
+  selectedChatId = activeChatId;
+  existingParticipants = activeChatParticipants.map(p => p.id);
+
+  const modal = document.getElementById('newChatModal');
+  const studentList = document.getElementById('studentList');
+  const createBtn = document.getElementById('createChatBtn');
+
+  studentList.innerHTML = '';
+
+  try {
+    const res = await fetch('http://localhost:3000/students', { cache: 'no-store' });
+    const allStudents = await res.json();
+
+    const notInChat = allStudents.filter(s => !existingParticipants.includes(s.id));
+
+    if (notInChat.length === 0) {
+      alert("✅ Всі користувачі вже є в чаті");
+      return;
+    }
+
+    notInChat.forEach(student => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <label>
+          <input type="checkbox" value="${student.id}"> 
+          ${student.first_name} ${student.last_name} — ${student.status}
+        </label>
+      `;
+      studentList.appendChild(li);
+    });
+
+    createBtn.textContent = "➕ Додати до чату";
+    modal.classList.remove('hiddenChat');
+  } catch (err) {
+    alert("❌ Помилка при завантаженні студентів");
+    console.error(err);
+  }
+}
+
+
+
+async function handleAddSelectedMembersToChat(chatId, existingIds) {
+  const checkboxes = document.querySelectorAll('#studentList input:checked');
+  const newIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+  if (newIds.length === 0) {
+    alert("❗ Оберіть хоча б одного нового учасника");
+    return;
+  }
+
+  const updatedIds = [...new Set([...existingIds, ...newIds])];
+
+  try {
+    const res = await fetch(`http://localhost:3000/chatrooms/${chatId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ participants: updatedIds })
+    });
+
+    const data = await res.json();
+    alert(data.message || "✅ Учасники додані");
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const studentId = user?.id;
+    await loadChatRooms(studentId);
+
+    closeNewChatModal();
+  } catch (err) {
+    alert("❌ Помилка при оновленні чату");
+    console.error(err);
+  }
+}
+
+async function handleModalSubmit() {
+  const checkboxes = document.querySelectorAll('#studentList input:checked');
+  const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+  if (modalMode === 'create') {
+    if (selectedIds.length < 2) {
+      alert('❗ Оберіть щонайменше двох учасників');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/chatrooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ participants: selectedIds })
+      });
+
+      const data = await res.json();
+      alert(data.message || '✅ Чат створено');
+    } catch (err) {
+      alert('❌ Помилка при створенні чату');
+      console.error(err);
+    }
+
+  } else if (modalMode === 'add') {
+    if (selectedIds.length === 0) {
+      alert("❗ Оберіть хоча б одного нового учасника");
+      return;
+    }
+
+    const updatedIds = [...new Set([...existingParticipants, ...selectedIds])];
+
+    try {
+      const res = await fetch(`http://localhost:3000/chatrooms/${selectedChatId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({ participants: updatedIds })
+      });
+
+      const data = await res.json();
+      alert(data.message || "✅ Учасники додані");
+    } catch (err) {
+      alert("❌ Помилка при оновленні чату");
+      console.error(err);
+    }
+  }
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const studentId = user?.id;
+  await loadChatRooms(studentId);
+  closeNewChatModal();
+}
+
+async function loadMessages(chatRoomId) {
+  const container = document.getElementById('chatMessages');
+  container.innerHTML = '';
+
+  try {
+    const res = await fetch(`http://localhost:3000/messages/${chatRoomId}`, {
+      cache: 'no-store'
+    });
+    const messages = await res.json();
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    messages.forEach(msg => {
+      const div = document.createElement('div');
+      div.className = 'message ' + (msg.authorId === user.id ? 'sent' : 'received');
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = msg.text;
+
+      const sender = document.createElement('span');
+      sender.className = 'sender';
+      sender.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">${msg.authorName}`;
+
+      if (msg.authorId === user.id) {
+        div.appendChild(bubble);
+        div.appendChild(sender);
+      } else {
+        div.appendChild(sender);
+        div.appendChild(bubble);
+      }
+
+      container.appendChild(div);
+    });
+
+    container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    console.error("❌ Помилка при завантаженні повідомлень:", err);
+  }
+}
+
+socket.on('newMessage', (message) => {
+    console.log('Нове повідомлення:', message);
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    console.log('Поточний користувач:', user);
+
+    const activeChatId = localStorage.getItem('activeChatId');
+    console.log('activeChatId:', activeChatId);
+
+    if (message.authorId === user.id) {
+        console.log('Повідомлення від себе — рендерю');
+        if (window.location.pathname.includes('messages') && message.chatRoomId === activeChatId) {
+            renderMessage(message);
+        }
+        return;
+    }
+
+    if (
+        window.location.pathname.includes('messages') &&
+        message.chatRoomId === activeChatId
+    ) {
+        console.log('Відображення повідомлення у відкритому чаті');
+        renderMessage(message);
+        fetch(`http://localhost:3000/unread/${user.id}/${message.chatRoomId}`, { method: 'DELETE' })
+            .catch(err => console.error('Помилка при видаленні непрочитаних:', err));
+        return;
+    }
+
+    console.log('Показ сповіщення дзвіночком');
+    waitForNotificationUI(() => showNotification(message));
+    if (message.authorId !== user.id) {
+        fetchUnreadMessages();
+    }
+});
+
+document.getElementById('sendMessageBtn').addEventListener('click', () => {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  const activeChatId = localStorage.getItem('activeChatId'); 
+  if (!text || !activeChatId) return;
+
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  const messageData = {
+    chatRoomId: activeChatId,
+    authorId: user.id,
+    authorName: `${user.login}`,
+    text: text
+  };
+
+  socket.emit('sendMessage', messageData);
+  input.value = '';
+});
+
+function renderMessage(message) {
+  const messagesContainer = document.getElementById('chatMessages');
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  const isOwnMessage = message.authorId === user.id;
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${isOwnMessage ? 'sent' : 'received'}`;
+
+  const senderSpan = document.createElement('span');
+  senderSpan.className = 'sender';
+  senderSpan.innerHTML = `<img class="user-ic" src="usericon.png" alt="user">${message.authorName}`;
+
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = 'bubble';
+  bubbleDiv.textContent = message.text;
+
+  if (isOwnMessage) {
+    messageDiv.appendChild(bubbleDiv);
+    messageDiv.appendChild(senderSpan);
+  } else {
+    messageDiv.appendChild(senderSpan);
+    messageDiv.appendChild(bubbleDiv);
+  }
+
+  messagesContainer.appendChild(messageDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight; 
+}
+
+function showNotification(message) {
+    const notifDot = document.getElementById('notifDot');
+    const bell = document.getElementById('bell');
+    const messageMod = document.getElementById('messageMod');
+
+    if (bell) bell.classList.add("shake"); 
+    if (notifDot) notifDot.style.display = "block";
+
+        setTimeout(() => {
+            bell.classList.remove("shake");
+            if (notifDot) notifDot.style.display = "block";
+        }, 500);
+
+  const newMsg = document.createElement('div');
+  newMsg.className = 'wholeMessage';
+  newMsg.innerHTML = `
+    <div class="iconUserMessag">
+        <img src="usericon.png" alt="user">
+        <p class="nameUserMessag">${message.authorName}</p>
+    </div>
+    <div class="messageText">${message.text}</div>
+  `;
+
+  newMsg.addEventListener('click', () => {
+    localStorage.setItem('redirectToChatId', message.chatRoomId);
+    window.location.href = 'messages.html';
+  });
+
+  messageMod.prepend(newMsg);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const redirectChatId = localStorage.getItem('redirectToChatId');
+    if (redirectChatId) {
+        localStorage.removeItem('redirectToChatId');
+        setTimeout(async () => {
+            const target = document.querySelector(`.chat[data-chat-id="${redirectChatId}"]`);
+            if (target) {
+                target.click();
+                const user = JSON.parse(localStorage.getItem('user'));
+                await fetch(`http://localhost:3000/unread/${user.id}/${redirectChatId}`, { method: 'DELETE' });
+                document.getElementById('notifDot').style.display = 'none';
+            }
+        }, 500);
+    }
+});
+
+async function fetchUnreadMessages() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) return;
+
+  const res = await fetch(`http://localhost:3000/unread/${user.id}`);
+  const messages = await res.json();
+
+  if (messages.length) {
+    const bell = document.getElementById('bell');
+    const notifDot = document.getElementById('notifDot');
+    const messageMod = document.getElementById('messageMod');
+
+    bell?.classList.add("shake");
+    notifDot.style.display = "block";
+
+    messageMod.innerHTML = '';
+
+    messages.forEach((msg) => {
+      const div = document.createElement('div');
+      div.className = 'wholeMessage';
+      div.innerHTML = `
+        <div class="iconUserMessag">
+            <img src="usericon.png" alt="user">
+            <p class="nameUserMessag">${msg.authorName}</p>
+        </div>
+        <div class="messageText">${msg.text}</div>
+      `;
+
+      div.addEventListener('click', () => {
+        localStorage.setItem('redirectToChatId', msg.chatRoomId);
+        window.location.href = 'messages.html';
+      });
+
+      messageMod.appendChild(div);
+    });
+  }
+}
+
+window.addEventListener('beforeunload', () => {
+  localStorage.removeItem('activeChatId');
+});

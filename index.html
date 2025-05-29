@@ -44,6 +44,7 @@
                 <tbody id="studentTable">
                     <tr>
                         <td><input type="checkbox" aria-label="Select all students"></td>
+                        <td style="display:none;" class="studentId">1</td>
                         <td>KN-21</td>
                         <td>John Smith</td>
                         <td>M</td>
@@ -70,18 +71,17 @@
                 <hr>
                 <h2 id="h2Text">Add Student</h2>
                 <form id="studentForm">
-                    <input type="hidden" id="studentId">
                     <input type="hidden" id="validationType" value="js">
-                    <label for="group">Group:</label>
-                    <input type="text" id="group" required pattern="[A-Z]{2}-\d{2}" title="Please enter correct data (For example: KN-21, PZ-32)">
-                    <span class="error-span" id="error-span-group">Please enter correct data (For example: KN-21, PZ-32)</span><br>
-                    <label for="firstName">First Name:</label>
-                    <input type="text" id="firstName" required pattern="^[A-Z][a-z]+$" title="Please enter correct data (First name must start with an uppercase letter)">
-                    <span class="error-span" id="error-span-name">Please enter correct data (First name must start with an uppercase letter)</span><br>
+                    <label for="student_group">Group:</label>
+                    <input type="text" id="student_group" required pattern="[A-Z]{2}-\d{2}" title="Please enter correct data (For example: KN-21, PZ-32)">
+                    <span class="error-span" id="error-span-student_group">Please enter correct data (For example: KN-21, PZ-32)</span><br>
+                    <label for="first_name">First Name:</label>
+                    <input type="text" id="first_name" required pattern="^[A-Z][a-z]+$" title="Please enter correct data (First name must start with an uppercase letter)">
+                    <span class="error-span" id="error-span-first_name">Please enter correct data (First name must start with an uppercase letter)</span><br>
 
-                    <label for="lastName">Last Name:</label>
-                    <input type="text" id="lastName" required pattern="^[A-Z][a-z]+$" title="Please enter correct data(Last name must start with an uppercase letter)">
-                    <span class="error-span" id="error-span-surname">Please enter correct data(Last name must start with an uppercase letter)</span><br>
+                    <label for="last_name">Last Name:</label>
+                    <input type="text" id="last_name" required pattern="^[A-Z][a-z]+$" title="Please enter correct data(Last name must start with an uppercase letter)">
+                    <span class="error-span" id="error-span-last_name">Please enter correct data(Last name must start with an uppercase letter)</span><br>
 
                     <label for="gender">Gender:</label>
                     <select id="gender" required>
@@ -92,7 +92,7 @@
 
                     <label for="birthday">Birthday:</label>
                     <input type="date" id="birthday" required>
-                    <span class="error-span" id="error-span-date">Please select birthday date correct</span><br>
+                    <span class="error-span" id="error-span-birthday">Please select birthday date correct</span><br>
 
                     <div class="modal-buttons">
                         <button type="button" id="cancel">Cancel</button>
@@ -122,6 +122,7 @@
                 <button>4</button>
                 <button>&gt;</button>
             </div>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
     <script src="script.js"></script>
 </body>
