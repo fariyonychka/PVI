@@ -645,7 +645,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-let modalMode = 'create'; // або 'add'
+let modalMode = 'create'; 
 let selectedChatId = null;
 let existingParticipants = [];
 let activeChatId = null;
@@ -653,20 +653,16 @@ let activeChatParticipants = [];
 
 const socket = io('http://localhost:3000');
 
-// ======= Основна логіка запуску після завантаження DOM =======
 document.addEventListener('DOMContentLoaded', () => {
    const user = JSON.parse(localStorage.getItem('user'));
     const studentId = user?.id;
 
     if (studentId) {
         socket.emit('userConnected', studentId);
-        // Приєднуємося до всіх чатів користувача
         joinAllChatRooms(studentId);
 
-        // Завантажуємо непрочитані повідомлення
         fetchUnreadMessages();
 
-        // Специфічна логіка для messages.html
         if (window.location.pathname.includes('messages')) {
             const newChatBtn = document.getElementById('newChatBtn');
             const createChatBtn = document.getElementById('createChatBtn');
@@ -708,7 +704,6 @@ socket.on('userStatusUpdate', ({ userId, status }) => {
             }
             return participant;
         });
-        // Оновлюємо UI
         updateChatRoomUI();
     }
 });
@@ -810,8 +805,8 @@ async function loadChatRooms(currentStudentId) {
     const chatRooms = await res.json();
 
     const chatList = document.getElementById('chatList');
-    chatList.innerHTML = ''; // Очистити список
-    console.log("🔁 Отримані чати:", chatRooms); // <—
+    chatList.innerHTML = ''; 
+    console.log("🔁 Отримані чати:", chatRooms); 
 
     chatRooms.forEach(chat => {
       const li = document.createElement('li');
@@ -827,7 +822,6 @@ async function loadChatRooms(currentStudentId) {
     });
 
     if (chatRooms.length > 0) {
-      // Автоматично відкриваємо перший чат
       await openChatRoom(chatRooms[0].id, chatRooms[0].participants);
     }
   } catch (err) {
@@ -836,9 +830,9 @@ async function loadChatRooms(currentStudentId) {
 }
 
 async function openChatRoom(chatId, participants) {
-  activeChatId = chatId; // <--- зберігаємо
-  activeChatParticipants = participants; // <--- зберігаємо
-  localStorage.setItem('activeChatId', chatId); // зберігаємо в локальне сховище
+  activeChatId = chatId; 
+  activeChatParticipants = participants; 
+  localStorage.setItem('activeChatId', chatId); 
   socket.emit('joinRoom', chatId);
   const chatTitle = document.getElementById('userChatRoomText');
   const user = JSON.parse(localStorage.getItem('user'));
@@ -853,7 +847,6 @@ async function openChatRoom(chatId, participants) {
   updateChatRoomUI();
   loadMessages(chatId);
 
-  // Можна підсвітити активний чат у списку
   const chats = document.querySelectorAll('.chat');
   chats.forEach(li => {
     li.classList.toggle('selected', li.dataset.chatId == chatId);
@@ -1060,7 +1053,6 @@ socket.on('newMessage', (message) => {
     const activeChatId = localStorage.getItem('activeChatId');
     console.log('activeChatId:', activeChatId);
 
-    // Якщо повідомлення від поточного користувача
     if (message.authorId === user.id) {
         console.log('Повідомлення від себе — рендерю');
         if (window.location.pathname.includes('messages') && message.chatRoomId === activeChatId) {
@@ -1069,20 +1061,17 @@ socket.on('newMessage', (message) => {
         return;
     }
 
-    // Якщо користувач у потрібному чаті на messages.html
     if (
         window.location.pathname.includes('messages') &&
         message.chatRoomId === activeChatId
     ) {
         console.log('Відображення повідомлення у відкритому чаті');
         renderMessage(message);
-        // Очищаємо непрочитані для цього чату
         fetch(`http://localhost:3000/unread/${user.id}/${message.chatRoomId}`, { method: 'DELETE' })
             .catch(err => console.error('Помилка при видаленні непрочитаних:', err));
         return;
     }
 
-    // Показуємо сповіщення на всіх сторінках
     console.log('Показ сповіщення дзвіночком');
     waitForNotificationUI(() => showNotification(message));
     if (message.authorId !== user.id) {
@@ -1134,7 +1123,7 @@ function renderMessage(message) {
   }
 
   messagesContainer.appendChild(messageDiv);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight; // автоскрол до низу
+  messagesContainer.scrollTop = messagesContainer.scrollHeight; 
 }
 
 function showNotification(message) {
@@ -1161,7 +1150,6 @@ function showNotification(message) {
   `;
 
   newMsg.addEventListener('click', () => {
-    // Зберігаємо chatId у локальне сховище
     localStorage.setItem('redirectToChatId', message.chatRoomId);
     window.location.href = 'messages.html';
   });
@@ -1200,7 +1188,7 @@ async function fetchUnreadMessages() {
     bell?.classList.add("shake");
     notifDot.style.display = "block";
 
-    messageMod.innerHTML = ''; // Очистити перед оновленням
+    messageMod.innerHTML = '';
 
     messages.forEach((msg) => {
       const div = document.createElement('div');

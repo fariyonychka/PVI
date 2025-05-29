@@ -125,6 +125,9 @@ gap: 5px;
     font-size: 14px;
     margin: 0%;
     text-align: center;
+        font-weight: bold;
+    color: #333;
+
 }
 .messageText{
     background-color: #838181f0;
@@ -135,6 +138,11 @@ gap: 5px;
     border-radius: 5px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
     position: relative;
+    color: #fff;
+    padding: 10px 15px;
+    font-size: 18px;
+    line-height: 1.4;
+
 }
 .messageMod{
     display: none;

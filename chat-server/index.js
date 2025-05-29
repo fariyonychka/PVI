@@ -1,4 +1,3 @@
-// index.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -41,33 +40,27 @@ let mysqlPool;
   });
 })();
 
-// API: Отримати всі чати для студента
 app.get('/chatrooms/:studentId', async (req, res) => {
     res.set('Cache-Control', 'no-store');
   try {
     const studentId = parseInt(req.params.studentId);
 
-    // 1. Отримуємо чати, де studentId є учасником
     const rooms = await ChatRoom.find({ participants: studentId });
 
-    // 2. Збираємо всі унікальні participant ID
     const allParticipantIds = [
       ...new Set(rooms.flatMap(room => room.participants))
     ];
 
-    // 3. SQL-запит до MySQL
     const [students] = await mysqlPool.query(
       `SELECT id, first_name, last_name, status FROM students WHERE id IN (?)`,
       [allParticipantIds]
     );
 
-    // 4. Перетворюємо у словник для швидкого доступу
     const studentMap = {};
     students.forEach(st => {
       studentMap[st.id] = st;
     });
 
-    // 5. Додаємо повну інформацію про учасників у кожен чат
     const enrichedRooms = rooms.map(room => ({
       id: room._id,
       participants: room.participants.map(pid => studentMap[pid]).filter(Boolean)
@@ -82,7 +75,6 @@ app.get('/chatrooms/:studentId', async (req, res) => {
 
 
 
-// API: Отримати список студентів (з іменем, прізвищем і статусом)
 app.get('/students', async (req, res) => {
     res.set('Cache-Control', 'no-store');
   try {
@@ -96,7 +88,6 @@ app.get('/students', async (req, res) => {
   }
 });
 
-// API: Створити або знайти чат з вказаними учасниками
 app.post('/chatrooms', async (req, res) => {
     res.set('Cache-Control', 'no-store');
   try {
@@ -106,10 +97,8 @@ app.post('/chatrooms', async (req, res) => {
       return res.status(400).json({ error: "Має бути мінімум 2 учасники" });
     }
 
-    // Сортуємо для правильного порівняння
     participants = participants.sort((a, b) => a - b);
 
-    // Пошук існуючого чату з тими ж учасниками
     const existingRoom = await ChatRoom.findOne({
       participants: { $all: participants, $size: participants.length }
     });
@@ -118,7 +107,6 @@ app.post('/chatrooms', async (req, res) => {
       return res.json({ message: "Чат вже існує", room: existingRoom });
     }
 
-    // Створення нового чату
     const newRoom = new ChatRoom({ participants });
     const saveRoom = await newRoom.save();
     console.log('Чати перезавантажено');
@@ -129,7 +117,6 @@ app.post('/chatrooms', async (req, res) => {
   }
 });
 
-// API: Отримати всі повідомлення певного чату
 app.get('/messages/:chatRoomId', async (req, res) => {
     res.set('Cache-Control', 'no-store');
   const messages = await Message.find({ chatRoomId: req.params.chatRoomId }).sort({ timestamp: 1 });
@@ -154,7 +141,6 @@ app.post('/messages', async (req, res) => {
 });
 
 
-// Оновлення учасників чату
 app.put('/chatrooms/:chatId', async (req, res) => {
   try {
     const chatId = req.params.chatId;
@@ -203,12 +189,10 @@ io.on('connection', (socket) => {
 
   socket.on('userConnected', async (userId) => {
         console.log(`👤 Користувач ${userId} підключився`);
-        onlineUsers.set(userId.toString(), socket.id); // Зберігаємо статус онлайн
+        onlineUsers.set(userId.toString(), socket.id); 
 
-        // Отримуємо всі чати користувача
         try {
             const chatRooms = await ChatRoom.find({ participants: userId });
-            // Повідомляємо всіх учасників чатів про онлайн-статус
             chatRooms.forEach((chat) => {
                 io.to(chat._id.toString()).emit('userStatusUpdate', {
                     userId: userId.toString(),
@@ -264,7 +248,6 @@ const chatUsers = chatRoom.participants;
         console.log('🔌 Client disconnected:', socket.id);
         let disconnectedUserId = null;
 
-        // Знаходимо userId за socket.id
         for (const [userId, socketId] of onlineUsers) {
             if (socketId === socket.id) {
                 disconnectedUserId = userId;
@@ -275,10 +258,8 @@ const chatUsers = chatRoom.participants;
 
         if (disconnectedUserId) {
             console.log(`👤 Користувач ${disconnectedUserId} від'єднався`);
-            // Отримуємо всі чати користувача
             try {
                 const chatRooms = await ChatRoom.find({ participants: disconnectedUserId });
-                // Повідомляємо всіх учасників чатів про офлайн-статус
                 chatRooms.forEach((chat) => {
                     io.to(chat._id.toString()).emit('userStatusUpdate', {
                         userId: disconnectedUserId,

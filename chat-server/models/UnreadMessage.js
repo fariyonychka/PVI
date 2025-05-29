@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const unreadMessageSchema = new mongoose.Schema({
   chatRoomId: mongoose.Schema.Types.ObjectId,
-  receiverId: Number, // ID користувача, якому призначено
+  receiverId: Number, 
   authorName: String,
   text: String,
   timestamp: { type: Date, default: Date.now }
