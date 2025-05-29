@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../helpers/db.php';
 
+
 class Student {
     public static function getAll() {
         global $pdo;
@@ -130,5 +131,6 @@ class Student {
     private static function validateDate($date, $format = 'Y-m-d') {
         $d = DateTime::createFromFormat($format, $date);
         return $d && $d->format($format) === $date;
+
     }
 }

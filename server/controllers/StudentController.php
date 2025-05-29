@@ -8,6 +8,7 @@ require_once __DIR__ . '/../views/jsonResponse.php';
 
 class StudentController {
     public static function handle($method) {
+
         $data = json_decode(file_get_contents("php://input"), true);
         $id = $_GET['id'] ?? null;
 
@@ -20,6 +21,7 @@ class StudentController {
                 break;
             case 'PUT':
                 self::updateStudent($id, $data);
+
                 break;
                 case 'DELETE':
                     $id = $_GET['id'] ?? ($data['id'] ?? null); // підтримка GET або тіла
@@ -29,6 +31,7 @@ class StudentController {
                 http_response_code(405);
                 echo json_encode(['error' => 'Method Not Allowed']);
                 break;
+
         }
     }
 
@@ -58,9 +61,15 @@ class StudentController {
             http_response_code(400);
             echo json_encode(['error' => 'Не вказано ID']);
             return;
+
         }
 
         $result = Student::delete($id);
         echo json_encode($result);
+    }
+
+    private static function getStudents() {
+        $students = Student::getAll();
+        echo json_encode($students);
     }
 }

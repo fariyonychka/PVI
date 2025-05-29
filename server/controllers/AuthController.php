@@ -15,6 +15,7 @@ class AuthController {
     
 
     public static function logout() {
+
         global $pdo;
         if (isset($_SESSION['user'])) {
         $login = $_SESSION['user']['login'];
@@ -32,6 +33,7 @@ class AuthController {
             'year' => $year
         ]);
     }
+
     session_unset();
 
     if (ini_get("session.use_cookies")) {

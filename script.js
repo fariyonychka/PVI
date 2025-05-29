@@ -1,5 +1,6 @@
 loadHeader();
 loadNav();
+
     let editedRow = null;
     const addNewBtn = document.querySelector(".addnew img");
     const modal = document.getElementById("modal");
@@ -24,6 +25,7 @@ loadNav();
     const rowsPerPage = 5; 
     let currentPage = 1;
 
+
 async function loadHeader() {
     let response = await fetch("./header.html");
     let data = await response.text();
@@ -33,6 +35,7 @@ async function loadHeader() {
         headerPlaceholder.innerHTML = data;
         document.dispatchEvent(new Event("headerLoaded"));
     }
+
 
 }
 function waitForNotificationUI(callback) {
@@ -49,6 +52,7 @@ function waitForNotificationUI(callback) {
     };
     check();
 }
+
 document.addEventListener("headerLoaded", async function () {
     try {
         const response = await safeFetch("/PVI/server/index.php/api/user", {
@@ -71,9 +75,11 @@ document.addEventListener("headerLoaded", async function () {
             renderUserUI(user);
         } else {
             localStorage.removeItem("user");
+
             console.log("renderUserUI викликано з: null");
             renderUserUI(null);
         }
+
     } catch (error) {
         if (error.message === "Unauthorized") {
             console.log("Користувач не авторизований — показуємо гостьовий режим");
@@ -102,6 +108,7 @@ function renderUserUI(user) {
         logoutBtn?.classList.remove("hidden");
         userInfoBlock?.classList.remove("hidden");
         const userLoginText = document.getElementById("userLoginText");
+
         const userChatRoomText=document.getElementById("userChatRoomText");
         if (userLoginText) {
             userLoginText.textContent = user.login;
@@ -109,6 +116,7 @@ function renderUserUI(user) {
         if (userChatRoomText) {
             userChatRoomText.textContent = "Chat Room "+ user.login;
         }
+
         protectedElements.forEach(el => {
             el.classList.remove("disabled-link");
             el.style.pointerEvents = "auto";
@@ -116,7 +124,9 @@ function renderUserUI(user) {
         });
 
             fetchStudents();
+
 waitForNotificationUI(fetchUnreadMessages);
+
         
     } else {
         loginBtn?.classList.remove("hidden");
@@ -220,6 +230,7 @@ function attachHeaderEvents() {
     });
     
 }
+
 
 
 async function safeFetch(url, options = {}, config = {}) {
@@ -349,8 +360,17 @@ if (editBtn && deleteBtn) {
 }
     });
 
-    
+
+        return data;
+    } catch (error) {
+        if (silent401 && error.status === 401) {
+        } else {
+            console.error("Fetch error:", error.message);
+        }
+        throw error;
+    }
 }
+
 
 function showFormErrors(errors, prefix = "") {
     for (const field in errors) {
@@ -471,7 +491,13 @@ function paginateTable() {
 document.addEventListener("DOMContentLoaded", paginateTable);
 
 
+function renderStudentsTable(students) {
+    const tableBody = document.getElementById("studentTable");
+    tableBody.innerHTML = ""; 
+
+
 /*document.addEventListener("dblclick", function (event) {
+
     if (event.target.closest("#message-icon")) {
         let bell = document.getElementById("bell");
         let notifDot = document.getElementById("notifDot");
@@ -505,8 +531,10 @@ function highlightActivePage() {
     }
 }
 
+
 document.addEventListener("DOMContentLoaded", function () {
     
+
     document.querySelectorAll(".closeMod").forEach((btn) => {
         btn.addEventListener("click", function () {
             modal.classList.remove("active");
@@ -636,7 +664,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+
 /*if ("serviceWorker" in navigator) {
+
     navigator.serviceWorker.register("./sw.js")
         .then(() => console.log("Service Worker зареєстровано"))
         .catch(err => console.error("Помилка реєстрації Service Worker", err));

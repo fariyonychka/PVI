@@ -16,6 +16,7 @@ class Auth {
         if ($user && $user['pass'] === $password) {
             $_SESSION['user'] = [
                 'id' => $user['id'],
+
                 'login' => $user['login'],
                 'birth_year' => $user['pass']
             ];
@@ -29,6 +30,7 @@ class Auth {
             'name' => $user['login'],
             'year' => $user['pass']
         ]);
+
             return ["success" => true, "user" => $_SESSION['user']];
         }
         
